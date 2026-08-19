@@ -35,7 +35,7 @@ export interface AgentDecision {
   appointment?: DetectedAppointment;
   quote?: DetectedQuote;
   followUpMessage?: string;
-  source: "openai" | "mock";
+  source: "anthropic" | "openai" | "mock";
 }
 
 /** Acción ejecutada por una herramienta interna (se devuelve al cliente del chat). */
@@ -51,7 +51,7 @@ export interface ChatTurnResult {
   agent: { slug: string; name: string };
   intent: Intent;
   actions: ExecutedAction[];
-  source: "openai" | "mock";
+  source: "anthropic" | "openai" | "mock";
 }
 
 export interface DashboardSummary {

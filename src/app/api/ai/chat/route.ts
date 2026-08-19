@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
 import { runOrchestrator } from "@/lib/ai-orchestrator";
+import { activeProvider } from "@/lib/ai-provider";
 import { apiError } from "@/lib/api";
 import { publicDemoCompanyId } from "@/lib/constants";
-import { isOpenAIEnabled } from "@/lib/openai";
 import { checkChatRateLimit, rateLimitConfig } from "@/lib/rate-limit";
 import { getApiSession } from "@/lib/require-session";
 import { chatMessageSchema } from "@/schemas";
@@ -54,11 +54,11 @@ export async function POST(request: Request) {
   }
 }
 
-/** Estado del chat: útil para saber si responde OpenAI o el modo mock. */
+/** Estado del chat: útil para saber qué proveedor responde (o si es el modo mock). */
 export async function GET() {
   return NextResponse.json({
     ok: true,
-    mode: isOpenAIEnabled ? "openai" : "mock",
+    mode: activeProvider,
     companyId: publicDemoCompanyId,
     limits: {
       porIp: rateLimitConfig.perIpMax,

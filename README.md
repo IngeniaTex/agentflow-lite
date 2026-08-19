@@ -52,7 +52,7 @@ Esta versión incluye **autenticación básica** para proteger el dashboard, con
 - **Tailwind CSS 4** + componentes estilo **shadcn/ui** (`src/components/ui`)
 - **Prisma ORM** + **PostgreSQL** (compatible con Supabase)
 - **Auth.js / NextAuth v5** con `CredentialsProvider` + **bcryptjs**
-- **OpenAI SDK** (con modo mock si no hay API key)
+- **Anthropic SDK** y **OpenAI SDK** (proveedor seleccionable; modo mock si no hay API key)
 - **Zod** + **React Hook Form**
 - **Recharts**, **Lucide React**, **date-fns**
 - **Resend** preparado para emails (deshabilitado si no hay API key)
@@ -112,9 +112,11 @@ Las rutas de API protegidas usan `requireApiSession()` y **todas las consultas f
 
 1. Detecta la intención del mensaje (`GENERAL`, `FAQ`, `APPOINTMENT`, `QUOTE`, `FOLLOW_UP`).
 2. Selecciona el agente activo de la empresa que atiende esa intención.
-3. Genera la respuesta:
-   - con **OpenAI** si existe `OPENAI_API_KEY` (respuesta + datos estructurados en JSON),
-   - con el **modo mock** basado en reglas si no existe (o si la llamada falla).
+3. Genera la respuesta con el proveedor activo (`AI_PROVIDER`):
+   - con **Anthropic (Claude)** si existe `ANTHROPIC_API_KEY`; el esquema JSON se
+     valida del lado del servidor, así que la forma de la respuesta llega garantizada,
+   - con **OpenAI** si existe `OPENAI_API_KEY`,
+   - con el **modo mock** basado en reglas si no hay llave (o si la llamada falla).
 4. Ejecuta **solo las herramientas permitidas** para ese agente (crear cliente, crear cita, generar cotización, crear tarea, resumir conversación…).
 5. Guarda mensajes, actualiza el estado del prospecto y registra eventos de métrica.
 
@@ -221,6 +223,9 @@ DIRECT_URL       = postgresql://…supabase.com:5432/postgres
 AUTH_SECRET      = <openssl rand -base64 32>
 NEXTAUTH_SECRET  = <el mismo valor>
 AUTH_TRUST_HOST  = true
+AI_PROVIDER      = anthropic          # anthropic | openai | mock
+ANTHROPIC_API_KEY = sk-ant-…
+ANTHROPIC_MODEL  = claude-opus-5
 OPENAI_API_KEY   = sk-…
 OPENAI_MODEL     = gpt-4o-mini
 NEXT_PUBLIC_APP_NAME        = AgentFlow Lite
@@ -262,19 +267,22 @@ al visitante. El contador vive en memoria del proceso: en serverless es un tope
 aproximado por instancia, suficiente para un demo. Para cuotas estrictas, mover a
 Upstash Redis.
 
-### ¿OpenAI o modo mock?
+### ¿Qué proveedor está respondiendo?
 
-Si la llamada a OpenAI falla, el orquestador **cae a mock en silencio** (solo deja
+Si la llamada al modelo falla, el orquestador **cae a mock en silencio** (solo deja
 log en el servidor). Para comprobar en qué modo estás:
 
 ```bash
 curl https://<tu-dominio>/api/ai/chat
-# {"ok":true,"mode":"openai", …}
+# {"ok":true,"mode":"anthropic", …}   → anthropic | openai | mock
 ```
 
-La interfaz del chat también muestra la etiqueta **OpenAI** o **Modo mock** en cada
-respuesta. Si aparece "Modo mock" con la llave configurada, revisa la llave o el
-billing de OpenAI, no el código.
+La interfaz del chat también muestra la etiqueta **Claude**, **OpenAI** o **Modo mock**
+en cada respuesta. Si aparece "Modo mock" con la llave configurada, revisa la llave o el
+billing del proveedor, no el código.
+
+Para cambiar de proveedor basta con editar `AI_PROVIDER` en Vercel y redesplegar; no hay
+que tocar código.
 
 ---
 
@@ -288,6 +296,13 @@ NEXTAUTH_SECRET="replace-with-a-secure-random-secret"
 NEXTAUTH_URL="http://localhost:3000"
 AUTH_SECRET="replace-with-a-secure-random-secret"
 AUTH_TRUST_HOST="true"
+
+# Proveedor de IA: "anthropic", "openai" o "mock".
+# Vacío = autodetecta (Anthropic si hay llave, luego OpenAI, luego mock).
+AI_PROVIDER="anthropic"
+
+ANTHROPIC_API_KEY=""
+ANTHROPIC_MODEL="claude-opus-5"
 
 OPENAI_API_KEY=""
 OPENAI_MODEL="gpt-4o-mini"
@@ -306,8 +321,14 @@ CHAT_RATE_LIMIT_GLOBAL_DAILY="300"
 
 - En local, `DIRECT_URL` puede ser idéntica a `DATABASE_URL`. En producción con
   pooler (Supabase) deben ser distintas: ver la sección de despliegue.
-- Si **`OPENAI_API_KEY` está vacío**, el sistema usa **respuestas mock** (reglas + base de conocimiento). El chat lo indica con la etiqueta *Modo mock*.
-- Si **`OPENAI_API_KEY` está configurado**, el orquestador usa OpenAI y cae al modo mock solo si la llamada falla.
+- `AI_PROVIDER` elige quién responde. Un proveedor **sin su llave cae al modo mock**
+  en lugar de fallar, y lo avisa en el log del servidor.
+- Si **no hay ninguna llave**, el sistema usa **respuestas mock** (reglas + base de
+  conocimiento). El chat lo indica con la etiqueta *Modo mock*.
+- Con llave configurada, el orquestador llama al modelo y cae al modo mock solo si la
+  llamada falla.
+- **Claude Opus 5 no acepta `temperature`** (devuelve 400); el comportamiento se guía
+  desde el prompt. El proveedor de OpenAI sí la usa.
 - `RESEND_API_KEY` queda preparado para la Fase 2: sin llave, las notificaciones solo se registran en consola.
 
 ---
@@ -463,7 +484,10 @@ Las restricciones se aplican **en el servidor** (`requireApiSession(["ADMIN"])`)
 │   │   ├── auth.ts                  # NextAuth + Credentials + bcrypt
 │   │   ├── auth.config.ts           # config compartida (Edge-safe)
 │   │   ├── require-session.ts       # requireSession / getCurrentCompanyId
-│   │   ├── prisma.ts · openai.ts · mock-ai.ts
+│   │   ├── prisma.ts · mock-ai.ts
+│   │   ├── ai-provider.ts            # selector AI_PROVIDER
+│   │   ├── anthropic.ts · openai.ts  # proveedores
+│   │   ├── agent-prompt.ts           # prompt + esquema JSON compartidos
 │   │   ├── ai-orchestrator.ts · agent-definitions.ts · agent-tools.ts
 │   │   ├── metrics.ts · labels.ts · date-parsing.ts · utils.ts
 │   │   └── api.ts · constants.ts · email.ts

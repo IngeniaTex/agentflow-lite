@@ -19,9 +19,9 @@ import {
   toolUpdateCustomerStatus,
   toolUpsertCustomer,
 } from "@/lib/agent-tools";
+import { generateAgentDecision, isModelEnabled } from "@/lib/ai-provider";
 import { parseSpanishDate, safeParseISO } from "@/lib/date-parsing";
 import { buildMockDecision, detectIntent, type AgentContext } from "@/lib/mock-ai";
-import { generateAgentDecision, isOpenAIEnabled } from "@/lib/openai";
 import { prisma } from "@/lib/prisma";
 import type { AgentDecision, ChatTurnResult, ExecutedAction } from "@/types";
 
@@ -38,7 +38,7 @@ export interface OrchestratorInput {
  * Orquestador IA.
  *
  * Chat público -> detección de intención -> selección de agente ->
- * generación de respuesta (OpenAI o mock) -> ejecución de herramientas
+ * generación de respuesta (Anthropic, OpenAI o mock) -> ejecución de herramientas
  * permitidas -> persistencia de conversación, registros y métricas.
  */
 export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTurnResult> {
@@ -124,9 +124,9 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
     data: { conversationId: conversation.id, sender: "CUSTOMER", content: message },
   });
 
-  // 4. Respuesta del agente (OpenAI con fallback a mock)
+  // 4. Respuesta del agente (proveedor activo con fallback a mock)
   let decision: AgentDecision | null = null;
-  if (isOpenAIEnabled) {
+  if (isModelEnabled) {
     decision = await generateAgentDecision(message, context, effectiveDefinition, intent);
   }
   if (!decision) {

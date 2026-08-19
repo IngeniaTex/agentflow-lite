@@ -34,7 +34,7 @@ export function ChatWidget({ companyName }: { companyName: string }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [mode, setMode] = useState<"openai" | "mock" | null>(null);
+  const [mode, setMode] = useState<"anthropic" | "openai" | "mock" | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -125,7 +125,7 @@ export function ChatWidget({ companyName }: { companyName: string }) {
         </div>
         {mode && (
           <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
-            {mode === "openai" ? "OpenAI" : "Modo mock"}
+            {mode === "anthropic" ? "Claude" : mode === "openai" ? "OpenAI" : "Modo mock"}
           </span>
         )}
       </header>
