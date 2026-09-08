@@ -14,7 +14,9 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset",
-    "db:local": "node scripts/local-db.mjs"
+    "db:local": "node scripts/local-db.mjs",
+    "user:create": "tsx scripts/create-user.ts",
+    "company:create": "tsx scripts/onboard-company.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
