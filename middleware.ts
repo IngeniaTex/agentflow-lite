@@ -15,6 +15,8 @@ export default auth((req) => {
 
   const isPublic =
     PUBLIC_ROUTES.includes(path) ||
+    // /chat/<slug>: el chat público de cada empresa.
+    path.startsWith("/chat/") ||
     path.startsWith("/api/auth") ||
     path.startsWith("/api/ai/chat");
 

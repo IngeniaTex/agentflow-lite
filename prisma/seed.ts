@@ -13,6 +13,9 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 const DEMO_COMPANY_ID = process.env.NEXT_PUBLIC_DEMO_COMPANY_ID ?? "demo-company-001";
+// Debe coincidir con `publicDemoCompanySlug` de src/lib/constants.ts: es la URL
+// del chat público de la empresa demo (/chat/clinica-dental-sonrisa).
+const DEMO_COMPANY_SLUG = "clinica-dental-sonrisa";
 const ADMIN_ID = "user-admin-demo";
 const OPERATOR_ID = "user-operator-demo";
 const DEMO_PASSWORD = "password123";
@@ -132,10 +135,11 @@ async function main() {
   // ---------------------------------------------------------------- Empresa
   const company = await prisma.company.upsert({
     where: { id: DEMO_COMPANY_ID },
-    update: {},
+    update: { slug: DEMO_COMPANY_SLUG },
     create: {
       id: DEMO_COMPANY_ID,
       name: "Clínica Dental Sonrisa",
+      slug: DEMO_COMPANY_SLUG,
       industry: "Salud dental",
       description:
         "Clínica dental familiar con 3 consultorios, enfocada en odontología general, estética y ortodoncia.",

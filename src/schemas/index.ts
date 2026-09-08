@@ -142,8 +142,36 @@ export const updateTaskSchema = z.object({
 });
 
 // ------------------------------------------------------------------ Empresa
+/** Slug del chat público: minúsculas, números y guiones simples. */
+export const companySlugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(2, "El identificador es muy corto")
+  .max(60)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Solo minúsculas, números y guiones (ej. mi-negocio)");
+
 export const updateCompanySchema = z.object({
   name: z.string().trim().min(2).max(160).optional(),
+  slug: companySlugSchema.optional(),
+  /**
+   * Dominio propio del chat. Ausente = no se toca; "" lo desvincula.
+   * Ojo: `undefined` debe seguir siendo `undefined` o un PATCH parcial que no
+   * mande el campo acabaría borrando el dominio ya configurado.
+   */
+  chatDomain: z
+    .union([
+      z
+        .string()
+        .trim()
+        .toLowerCase()
+        .transform((value) =>
+          value.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0]!,
+        ),
+      z.literal(""),
+    ])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === "" ? null : value)),
   industry: optionalText,
   description: optionalText,
   phone: optionalText,
@@ -182,6 +210,8 @@ export const createKnowledgeSchema = z.object({
 export const chatMessageSchema = z.object({
   message: z.string().trim().min(1, "Escribe un mensaje").max(1000),
   conversationId: z.string().optional().nullable(),
+  /** Empresa del chat público; si falta se resuelve por dominio (ver lib/tenant.ts). */
+  companySlug: companySlugSchema.optional().nullable(),
   visitor: z
     .object({
       name: z.string().optional(),

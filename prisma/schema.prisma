@@ -142,8 +142,12 @@ enum MetricEventType {
 // ---------------------------------------------------------------------------
 
 model Company {
-  id            String   @id @default(cuid())
-  name          String
+  id   String @id @default(cuid())
+  name String
+  /// Identificador del chat público: /chat/<slug>.
+  slug String @unique
+  /// Dominio propio que sirve el chat de esta empresa (sin www ni puerto).
+  chatDomain    String?  @unique
   industry      String?
   description   String?
   phone         String?
