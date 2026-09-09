@@ -36,3 +36,11 @@ yarn-error.log*
 
 # configuración local de herramientas
 .claude/settings.local.json
+
+# Documentación local de entorno (no se publica)
+docs/ENTORNO.md
+docs/CASOS-DE-USO.md
+
+# Altas de usuarios y empresas (llevan contraseñas en claro)
+/Users
+/Empresas

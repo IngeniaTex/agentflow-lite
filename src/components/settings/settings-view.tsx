@@ -16,6 +16,8 @@ import { knowledgeTypeLabels } from "@/lib/labels";
 export interface CompanyData {
   id: string;
   name: string;
+  slug: string;
+  chatDomain: string | null;
   industry: string | null;
   description: string | null;
   phone: string | null;
@@ -118,6 +120,35 @@ export function SettingsView({
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="name">Nombre</Label>
               <Input id="name" name="name" defaultValue={company.name} disabled={!canEdit} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="slug">Identificador del chat</Label>
+              <Input
+                id="slug"
+                name="slug"
+                defaultValue={company.slug}
+                disabled={!canEdit}
+                aria-describedby="slug-help"
+              />
+              <p id="slug-help" className="text-xs text-muted-foreground">
+                Tu chat vive en <code className="rounded bg-muted px-1">/chat/{company.slug}</code>.
+                Si lo cambias, los enlaces que ya compartiste dejan de funcionar.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="chatDomain">Dominio propio del chat</Label>
+              <Input
+                id="chatDomain"
+                name="chatDomain"
+                placeholder="chat.mi-negocio.com"
+                defaultValue={company.chatDomain ?? ""}
+                disabled={!canEdit}
+                aria-describedby="domain-help"
+              />
+              <p id="domain-help" className="text-xs text-muted-foreground">
+                Opcional. Al apuntar ese dominio al despliegue, su página raíz de chat atiende a
+                esta empresa sin necesidad del identificador.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="industry">Giro</Label>

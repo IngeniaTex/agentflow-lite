@@ -22,7 +22,14 @@ const SUGGESTIONS = [
   "Me puedes hacer una cotización.",
 ];
 
-export function ChatWidget({ companyName }: { companyName: string }) {
+export function ChatWidget({
+  companyName,
+  companySlug,
+}: {
+  companyName: string;
+  /** Empresa a la que se dirigen los mensajes; la resuelve la página. */
+  companySlug: string;
+}) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -38,11 +45,11 @@ export function ChatWidget({ companyName }: { companyName: string }) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/ai/chat")
+    fetch(`/api/ai/chat?empresa=${encodeURIComponent(companySlug)}`)
       .then((response) => response.json())
       .then((data) => setMode(data.mode))
       .catch(() => setMode(null));
-  }, []);
+  }, [companySlug]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -63,7 +70,7 @@ export function ChatWidget({ companyName }: { companyName: string }) {
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: content, conversationId }),
+        body: JSON.stringify({ message: content, conversationId, companySlug }),
       });
 
       if (response.status === 429) {
