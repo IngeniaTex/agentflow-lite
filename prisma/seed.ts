@@ -7,6 +7,8 @@
  *
  * Ejecutar con: npm run prisma:seed
  */
+import { randomBytes } from "node:crypto";
+
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
@@ -18,7 +20,16 @@ const DEMO_COMPANY_ID = process.env.NEXT_PUBLIC_DEMO_COMPANY_ID ?? "demo-company
 const DEMO_COMPANY_SLUG = "clinica-dental-sonrisa";
 const ADMIN_ID = "user-admin-demo";
 const OPERATOR_ID = "user-operator-demo";
-const DEMO_PASSWORD = "password123";
+/**
+ * Contraseña de los usuarios demo. Sin `SEED_PASSWORD` se genera una al azar y
+ * se imprime al final: así el seed nunca deja una contraseña conocida en un
+ * despliegue público.
+ *
+ *   SEED_PASSWORD='la-que-quieras' npm run prisma:seed
+ */
+const DEMO_PASSWORD =
+  process.env.SEED_PASSWORD?.trim() || randomBytes(18).toString("base64url").slice(0, 24);
+const PASSWORD_GENERADA = !process.env.SEED_PASSWORD?.trim();
 
 const days = (n: number) => {
   const date = new Date();
@@ -563,8 +574,8 @@ async function main() {
   console.log("✅ Seed completado");
   console.table([
     { recurso: "Empresa", valor: company.name },
-    { recurso: "Admin", valor: `${admin.email} / ${DEMO_PASSWORD}` },
-    { recurso: "Operador", valor: `${operator.email} / ${DEMO_PASSWORD}` },
+    { recurso: "Admin", valor: admin.email },
+    { recurso: "Operador", valor: operator.email },
     { recurso: "Agentes", valor: AGENTS.length },
     { recurso: "Clientes", valor: 5 },
     { recurso: "Conversaciones", valor: 3 },
@@ -573,6 +584,13 @@ async function main() {
     { recurso: "Tareas", valor: 5 },
     { recurso: "Eventos de métrica", valor: metricEvents.length },
   ]);
+
+  if (PASSWORD_GENERADA) {
+    console.log(
+      `\n🔑 Contraseña de ambos usuarios: ${DEMO_PASSWORD}\n` +
+        "   No vuelve a mostrarse. Para fijarla tú: SEED_PASSWORD='…' npm run prisma:seed\n",
+    );
+  }
 }
 
 main()

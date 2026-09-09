@@ -231,9 +231,11 @@ Un `.transform()` que colapse `undefined` en `null` hace que un PATCH parcial bo
 
 ## Estado conocido
 
-- El seed usa la contraseña `password123` y `src/components/auth/login-form.tsx` muestra las
-  credenciales demo con click-to-fill. En un despliegue público esto deja entrar como ADMIN a
-  cualquiera contra la base real.
+- El seed ya no trae contraseña fija: usa `SEED_PASSWORD` o genera una al azar y la imprime una
+  sola vez. El login y la portada tampoco muestran credenciales. Pero `password123` sigue en el
+  historial de git, así que **toda base sembrada antes de ese cambio sigue abierta** hasta que se
+  roten esos usuarios con `scripts/create-user.ts --update`.
+- Las contraseñas reales de local y producción viven en `docs/CREDENCIALES.md` (ignorado por git).
 - `src/lib/email.ts` existe pero **nadie importa `@/lib/email`**; `toolSendNotification` devuelve
   `{ queued: false }`. `RESEND_API_KEY` y `EMAIL_FROM` no hacen nada todavía.
 - `next.config.ts` pone `eslint.ignoreDuringBuilds: true` — el build no falla por lint, hay que

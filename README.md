@@ -245,11 +245,11 @@ DATABASE_URL="<pooler>" DIRECT_URL="<directa>" npm run prisma:seed
 
 ### 5. Antes de compartir la URL
 
-- **Cambia la contraseña del seed** y quita el bloque de credenciales demo de
-  `src/components/auth/login-form.tsx`: hoy cualquiera que abra `/login` entra como
-  ADMIN y puede borrar registros.
+- **Rota las contraseñas anteriores a este cambio.** `password123` estuvo en este README y en el
+  historial de git, así que cualquier base sembrada antes sigue siendo accesible con ella:
+  `npm run user:create -- --email admin@agentflow.test --password '…' --update`.
 - El chat crea registros reales; usa el seed para limpiar entre demostraciones.
-- Verifica que los agentes corren con OpenAI y no en modo mock (ver abajo).
+- Verifica qué proveedor responde y si estás en modo mock (ver abajo).
 
 ### Límites del chat público
 
@@ -337,12 +337,19 @@ CHAT_RATE_LIMIT_GLOBAL_DAILY="300"
 
 El seed crea la empresa demo **Clínica Dental Sonrisa** (`demo-company-001`) y dos usuarios:
 
-| Rol | Email | Contraseña |
-| --- | --- | --- |
-| **ADMIN** | `admin@agentflow.test` | `password123` |
-| **OPERATOR** | `operador@agentflow.test` | `password123` |
+| Rol | Email |
+| --- | --- |
+| **ADMIN** | `admin@agentflow.test` |
+| **OPERATOR** | `operador@agentflow.test` |
 
-Las contraseñas se guardan hasheadas con bcrypt. La pantalla de login muestra ambas credenciales y permite rellenarlas con un clic.
+La contraseña **no está en el repositorio**: el seed genera una al azar y la imprime una sola vez al
+terminar. Para fijarla tú:
+
+```bash
+SEED_PASSWORD='la-que-quieras' npm run prisma:seed
+```
+
+Se guardan hasheadas con bcrypt. La pantalla de login no muestra ninguna credencial.
 
 El seed también carga: 4 agentes activos, 7 entradas de base de conocimiento, 5 clientes, 3 conversaciones con mensajes, 3 citas, 3 cotizaciones, 5 tareas y ~90 eventos de métrica de los últimos 7 días.
 
@@ -433,10 +440,11 @@ Las restricciones se aplican **en el servidor** (`requireApiSession(["ADMIN"])`)
 
 ## Flujo de prueba sugerido
 
-1. Entra a `/login` e inicia sesión como **admin** (`admin@agentflow.test` / `password123`).
+1. Entra a `/login` e inicia sesión como **admin** (`admin@agentflow.test`, con la contraseña que
+   imprimió el seed).
 2. Valida la redirección a `/dashboard` y revisa las tarjetas y recomendaciones IA.
 3. Entra a `/dashboard/agents` y confirma que existan **4 agentes activos**.
-4. Cierra sesión y entra como **operador** (`operador@agentflow.test` / `password123`).
+4. Cierra sesión y entra como **operador** (`operador@agentflow.test`, misma contraseña).
 5. Abre `/chat` en otra pestaña y escribe:
 
    ```txt

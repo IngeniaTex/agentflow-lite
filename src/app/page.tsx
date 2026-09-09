@@ -80,11 +80,6 @@ export default function HomePage() {
             </Link>
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Usuarios demo: <code className="rounded bg-muted px-1.5 py-0.5">admin@agentflow.test</code>{" "}
-          o <code className="rounded bg-muted px-1.5 py-0.5">operador@agentflow.test</code> ·
-          contraseña <code className="rounded bg-muted px-1.5 py-0.5">password123</code>
-        </p>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
