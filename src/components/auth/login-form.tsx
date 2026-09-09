@@ -23,7 +23,6 @@ export function LoginForm({ callbackUrl = "/dashboard" }: LoginFormProps) {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -48,12 +47,6 @@ export function LoginForm({ callbackUrl = "/dashboard" }: LoginFormProps) {
     router.refresh();
   });
 
-  const fillDemo = (email: string) => {
-    setValue("email", email);
-    setValue("password", "password123");
-    setFormError(null);
-  };
-
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -62,7 +55,7 @@ export function LoginForm({ callbackUrl = "/dashboard" }: LoginFormProps) {
           id="email"
           type="email"
           autoComplete="email"
-          placeholder="admin@agentflow.test"
+          placeholder="tu@empresa.com"
           {...register("email")}
         />
         {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
@@ -97,25 +90,6 @@ export function LoginForm({ callbackUrl = "/dashboard" }: LoginFormProps) {
           </>
         )}
       </Button>
-
-      <div className="rounded-lg border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
-        <p className="mb-2 font-medium text-foreground">Credenciales demo</p>
-        <button
-          type="button"
-          onClick={() => fillDemo("admin@agentflow.test")}
-          className="block w-full rounded px-2 py-1 text-left transition-colors hover:bg-muted"
-        >
-          <strong className="text-foreground">Admin:</strong> admin@agentflow.test / password123
-        </button>
-        <button
-          type="button"
-          onClick={() => fillDemo("operador@agentflow.test")}
-          className="block w-full rounded px-2 py-1 text-left transition-colors hover:bg-muted"
-        >
-          <strong className="text-foreground">Operador:</strong> operador@agentflow.test /
-          password123
-        </button>
-      </div>
     </form>
   );
 }
