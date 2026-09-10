@@ -15,7 +15,7 @@ export const demoCompanyId =
 export const publicDemoCompanyId = demoCompanyId;
 
 /** Slug fijo de la empresa demo para el chat público. */
-export const publicDemoCompanySlug = "clinica-dental-sonrisa";
+export const publicDemoCompanySlug = "clinica-medica-horizonte";
 
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "AgentFlow Lite";
 

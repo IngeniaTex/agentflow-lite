@@ -335,7 +335,7 @@ CHAT_RATE_LIMIT_GLOBAL_DAILY="300"
 
 ## Usuarios de prueba
 
-El seed crea la empresa demo **Clínica Dental Sonrisa** (`demo-company-001`) y dos usuarios:
+El seed crea la empresa demo **Clínica Médica Horizonte** (`demo-company-001`) y dos usuarios:
 
 | Rol | Email |
 | --- | --- |
@@ -448,14 +448,14 @@ Las restricciones se aplican **en el servidor** (`requireApiSession(["ADMIN"])`)
 5. Abre `/chat` en otra pestaña y escribe:
 
    ```txt
-   Hola, quiero una cita para limpieza dental el viernes.
+   Hola, quiero una consulta de medicina general el viernes.
    ```
 
    El **Agente de Citas** responde y crea prospecto + cita + tarea.
 6. Escribe también:
 
    ```txt
-   Quiero saber cuánto cuesta una limpieza dental.
+   Quiero saber cuánto cuesta una consulta de medicina general.
    ```
 
    El **Agente de Cotizaciones** responde con el precio de la base de conocimiento y crea la cotización.

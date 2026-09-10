@@ -1,7 +1,7 @@
 /**
  * Seed de AgentFlow Lite.
  *
- * Crea la empresa demo "Clínica Dental Sonrisa", dos usuarios de prueba
+ * Crea la empresa demo "Clínica Médica Horizonte", dos usuarios de prueba
  * (ADMIN y OPERATOR), el catálogo de 4 agentes base y datos operativos
  * de ejemplo para poder navegar el dashboard desde el primer minuto.
  *
@@ -16,8 +16,8 @@ const prisma = new PrismaClient();
 
 const DEMO_COMPANY_ID = process.env.NEXT_PUBLIC_DEMO_COMPANY_ID ?? "demo-company-001";
 // Debe coincidir con `publicDemoCompanySlug` de src/lib/constants.ts: es la URL
-// del chat público de la empresa demo (/chat/clinica-dental-sonrisa).
-const DEMO_COMPANY_SLUG = "clinica-dental-sonrisa";
+// del chat público de la empresa demo (/chat/clinica-medica-horizonte).
+const DEMO_COMPANY_SLUG = "clinica-medica-horizonte";
 const ADMIN_ID = "user-admin-demo";
 const OPERATOR_ID = "user-operator-demo";
 /**
@@ -86,27 +86,27 @@ const AGENTS = [
 
 const KNOWLEDGE = [
   {
-    title: "Limpieza dental",
+    title: "Consulta de medicina general",
     type: "PRICING" as const,
     content:
-      "La limpieza dental profesional tiene un costo de $800 MXN e incluye ultrasonido, pulido y revisión general. Duración aproximada: 45 minutos.",
+      "La consulta de medicina general tiene un costo de $800 MXN e incluye valoración clínica, revisión de signos vitales y recomendaciones de tratamiento. Duración aproximada: 45 minutos.",
   },
   {
-    title: "Blanqueamiento dental",
+    title: "Chequeo médico preventivo",
     type: "PRICING" as const,
     content:
-      "El blanqueamiento dental en consultorio cuesta $3500 MXN e incluye dos sesiones y kit de mantenimiento.",
+      "El chequeo médico preventivo cuesta $3500 MXN e incluye consulta, revisión de signos vitales, estudios básicos de laboratorio y seguimiento de resultados.",
   },
   {
-    title: "Resina o empaste",
+    title: "Certificado médico",
     type: "PRICING" as const,
-    content: "La resina dental (empaste) cuesta desde $900 MXN por pieza, según el tamaño de la caries.",
+    content: "La expedición de certificado médico cuesta $900 MXN e incluye valoración general y revisión de antecedentes clínicos.",
   },
   {
-    title: "Ortodoncia",
+    title: "Control de diabetes e hipertensión",
     type: "SERVICE" as const,
     content:
-      "Tratamiento de ortodoncia con brackets metálicos desde $15000 MXN, con planes de pago a 12 meses. Incluye valoración inicial sin costo.",
+      "El programa anual de control de diabetes e hipertensión cuesta desde $15000 MXN, con planes de pago a 12 meses. Incluye valoración inicial sin costo.",
   },
   {
     title: "Horarios y ubicación",
@@ -118,7 +118,7 @@ const KNOWLEDGE = [
     title: "Valoración inicial",
     type: "FAQ" as const,
     content:
-      "La primera valoración es sin costo e incluye revisión general y plan de tratamiento estimado.",
+      "La primera valoración es sin costo e incluye revisión de signos vitales, antecedentes y plan de atención estimado.",
   },
   {
     title: "Política de cancelación",
@@ -146,17 +146,29 @@ async function main() {
   // ---------------------------------------------------------------- Empresa
   const company = await prisma.company.upsert({
     where: { id: DEMO_COMPANY_ID },
-    update: { slug: DEMO_COMPANY_SLUG },
+    update: {
+      name: "Clínica Médica Horizonte",
+      slug: DEMO_COMPANY_SLUG,
+      industry: "Salud y medicina general",
+      description:
+        "Clínica médica familiar con 3 consultorios, enfocada en medicina general, prevención y control de enfermedades crónicas.",
+      phone: "+52 55 1234 5678",
+      email: "contacto@clinicahorizonte.test",
+      website: "https://clinicahorizonte.test",
+      address: "Av. Reforma 123, Col. Centro, CDMX",
+      businessHours: "Lunes a viernes de 9:00 a 19:00, sábados de 9:00 a 14:00",
+      tone: "profesional, cálido y cercano",
+    },
     create: {
       id: DEMO_COMPANY_ID,
-      name: "Clínica Dental Sonrisa",
+      name: "Clínica Médica Horizonte",
       slug: DEMO_COMPANY_SLUG,
-      industry: "Salud dental",
+      industry: "Salud y medicina general",
       description:
-        "Clínica dental familiar con 3 consultorios, enfocada en odontología general, estética y ortodoncia.",
+        "Clínica médica familiar con 3 consultorios, enfocada en medicina general, prevención y control de enfermedades crónicas.",
       phone: "+52 55 1234 5678",
-      email: "contacto@clinicasonrisa.test",
-      website: "https://clinicasonrisa.test",
+      email: "contacto@clinicahorizonte.test",
+      website: "https://clinicahorizonte.test",
       address: "Av. Reforma 123, Col. Centro, CDMX",
       businessHours: "Lunes a viernes de 9:00 a 19:00, sábados de 9:00 a 14:00",
       tone: "profesional, cálido y cercano",
@@ -241,7 +253,7 @@ async function main() {
         name: "Ana Ramírez",
         phone: "+52 55 8765 4321",
         email: "ana.ramirez@example.com",
-        serviceInterest: "Limpieza dental",
+        serviceInterest: "Consulta de medicina general",
         source: "WEB_CHAT",
         status: "APPOINTMENT_REQUESTED",
         notes: "Prefiere citas por la tarde.",
@@ -255,7 +267,7 @@ async function main() {
         name: "Carlos Méndez",
         phone: "+52 55 2233 4455",
         email: "carlos.mendez@example.com",
-        serviceInterest: "Ortodoncia",
+        serviceInterest: "Control de diabetes e hipertensión",
         source: "WEB_CHAT",
         status: "QUOTE_SENT",
         notes: "Pidió plan de pagos a 12 meses.",
@@ -269,7 +281,7 @@ async function main() {
         name: "María López",
         phone: "+52 55 9988 7766",
         email: "maria.lopez@example.com",
-        serviceInterest: "Blanqueamiento dental",
+        serviceInterest: "Chequeo médico preventivo",
         source: "WHATSAPP",
         status: "FOLLOW_UP",
         notes: "No contestó la última llamada.",
@@ -283,7 +295,7 @@ async function main() {
         name: "Jorge Salas",
         phone: "+52 55 4455 6677",
         email: "jorge.salas@example.com",
-        serviceInterest: "Resina o empaste",
+        serviceInterest: "Certificado médico",
         source: "WEB_CHAT",
         status: "NEW",
         notes: "Prospecto capturado por la Recepcionista IA.",
@@ -296,10 +308,10 @@ async function main() {
         name: "Lucía Fernández",
         phone: "+52 55 1122 3344",
         email: "lucia.fernandez@example.com",
-        serviceInterest: "Limpieza dental",
+        serviceInterest: "Consulta de medicina general",
         source: "REFERRAL",
         status: "CONVERTED",
-        notes: "Cliente recurrente, acude cada 6 meses.",
+        notes: "Paciente recurrente, acude cada 6 meses.",
         lastContactAt: hoursAgo(120),
       },
     }),
@@ -311,7 +323,7 @@ async function main() {
       {
         companyId: company.id,
         customerId: ana.id,
-        service: "Limpieza dental",
+        service: "Consulta de medicina general",
         requestedDate: days(2),
         status: "REQUESTED",
         notes: "Solicitada desde el chat web.",
@@ -319,7 +331,7 @@ async function main() {
       {
         companyId: company.id,
         customerId: lucia.id,
-        service: "Limpieza dental",
+        service: "Consulta de medicina general",
         requestedDate: days(4),
         confirmedDate: days(4),
         status: "CONFIRMED",
@@ -342,8 +354,8 @@ async function main() {
       {
         companyId: company.id,
         customerId: carlos.id,
-        service: "Ortodoncia",
-        description: "Brackets metálicos, tratamiento estimado de 18 meses.",
+        service: "Control de diabetes e hipertensión",
+        description: "Programa anual de control con consultas y seguimiento clínico.",
         amount: 15000,
         currency: "MXN",
         status: "SENT",
@@ -352,8 +364,8 @@ async function main() {
       {
         companyId: company.id,
         customerId: maria.id,
-        service: "Blanqueamiento dental",
-        description: "Dos sesiones en consultorio más kit de mantenimiento.",
+        service: "Chequeo médico preventivo",
+        description: "Consulta, estudios básicos de laboratorio y seguimiento de resultados.",
         amount: 3500,
         currency: "MXN",
         status: "DRAFT",
@@ -362,8 +374,8 @@ async function main() {
       {
         companyId: company.id,
         customerId: ana.id,
-        service: "Limpieza dental",
-        description: "Limpieza profesional con ultrasonido.",
+        service: "Consulta de medicina general",
+        description: "Valoración clínica y revisión de signos vitales.",
         amount: 800,
         currency: "MXN",
         status: "APPROVED",
@@ -379,7 +391,7 @@ async function main() {
         companyId: company.id,
         customerId: ana.id,
         agentId: "agent-citas",
-        title: "Confirmar cita de limpieza dental",
+        title: "Confirmar cita de medicina general",
         description: "Llamar a Ana Ramírez para confirmar disponibilidad.",
         dueDate: days(1),
         priority: "HIGH",
@@ -389,7 +401,7 @@ async function main() {
         companyId: company.id,
         customerId: carlos.id,
         agentId: "agent-cotizaciones",
-        title: "Dar seguimiento a cotización de ortodoncia",
+        title: "Dar seguimiento a programa de control médico",
         description: "Confirmar si Carlos requiere plan de pagos.",
         dueDate: days(2),
         priority: "MEDIUM",
@@ -436,7 +448,7 @@ async function main() {
       agentId: "agent-citas",
       channel: "WEB_CHAT",
       status: "HANDLED_BY_AI",
-      summary: "Ana solicitó una cita de limpieza dental para el viernes por la tarde.",
+      summary: "Ana solicitó una consulta de medicina general para el viernes por la tarde.",
       createdAt: hoursAgo(3),
     },
   });
@@ -446,14 +458,14 @@ async function main() {
       {
         conversationId: conversation1.id,
         sender: "CUSTOMER",
-        content: "Hola, quiero agendar una limpieza dental para el viernes.",
+        content: "Hola, quiero agendar una consulta de medicina general para el viernes.",
         createdAt: hoursAgo(3),
       },
       {
         conversationId: conversation1.id,
         sender: "AGENT",
         content:
-          "¡Hola! Con gusto registro tu solicitud de cita para limpieza dental el viernes. La dejo como solicitada; el equipo confirmará la disponibilidad. ¿Me compartes tu nombre y teléfono?",
+          "¡Hola! Con gusto registro tu solicitud de consulta de medicina general para el viernes. La dejo como solicitada; el equipo confirmará la disponibilidad. ¿Me compartes tu nombre y teléfono?",
         createdAt: hoursAgo(3),
         metadata: { agentSlug: "agente-de-citas", intent: "APPOINTMENT", source: "mock" },
       },
@@ -473,7 +485,7 @@ async function main() {
       agentId: "agent-cotizaciones",
       channel: "WEB_CHAT",
       status: "HANDLED_BY_AI",
-      summary: "Carlos pidió cotización de ortodoncia con plan de pagos.",
+      summary: "Carlos pidió información del programa de control de diabetes e hipertensión con plan de pagos.",
       createdAt: hoursAgo(28),
     },
   });
@@ -483,14 +495,14 @@ async function main() {
       {
         conversationId: conversation2.id,
         sender: "CUSTOMER",
-        content: "¿Cuánto cuesta un tratamiento de ortodoncia?",
+        content: "¿Cuánto cuesta el programa de control de diabetes e hipertensión?",
         createdAt: hoursAgo(28),
       },
       {
         conversationId: conversation2.id,
         sender: "AGENT",
         content:
-          "El tratamiento de ortodoncia con brackets metálicos parte de $15,000 MXN e incluye valoración inicial sin costo. Es una cotización preliminar sujeta a valoración.",
+          "El programa anual de control de diabetes e hipertensión parte de $15,000 MXN e incluye valoración inicial sin costo. Es una cotización preliminar sujeta a valoración médica.",
         createdAt: hoursAgo(28),
         metadata: { agentSlug: "agente-de-cotizaciones", intent: "QUOTE", source: "mock" },
       },
@@ -504,7 +516,7 @@ async function main() {
       agentId: "agent-seguimiento",
       channel: "WHATSAPP",
       status: "NEEDS_HUMAN",
-      summary: "María no ha respondido al seguimiento de blanqueamiento.",
+      summary: "María no ha respondido al seguimiento de su chequeo médico preventivo.",
       createdAt: hoursAgo(72),
     },
   });
@@ -515,7 +527,7 @@ async function main() {
         conversationId: conversation3.id,
         sender: "AGENT",
         content:
-          "Hola María, te escribimos de Clínica Dental Sonrisa para dar seguimiento a tu interés en blanqueamiento dental. ¿Te ayudamos a agendar esta semana?",
+          "Hola María, te escribimos de Clínica Médica Horizonte para dar seguimiento a tu interés en un chequeo médico preventivo. ¿Te ayudamos a agendar esta semana?",
         createdAt: hoursAgo(72),
         metadata: { agentSlug: "agente-de-seguimiento", intent: "FOLLOW_UP", source: "mock" },
       },

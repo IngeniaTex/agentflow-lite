@@ -17,7 +17,7 @@ interface ChatMessage {
 }
 
 const SUGGESTIONS = [
-  "Hola, quiero saber cuánto cuesta una limpieza dental.",
+  "Hola, quiero saber cuánto cuesta una consulta de medicina general.",
   "Quiero agendar una cita para el viernes.",
   "Me puedes hacer una cotización.",
 ];
