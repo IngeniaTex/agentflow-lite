@@ -1,6 +1,6 @@
-# AgentFlow Lite
+# Aiwork
 
-**AgentFlow Lite** es un template inicial para construir un **Framework Modular de Agentes IA para PyMEs**.
+**Aiwork** es un template inicial para construir un **Framework Modular de Agentes IA para PyMEs**.
 
 Permite que pequeños negocios, profesionales independientes y emprendedores activen agentes IA especializados para **atender clientes, organizar prospectos, agendar citas, generar cotizaciones simples, crear tareas, dar seguimiento y analizar métricas** desde un dashboard sencillo.
 
@@ -208,7 +208,7 @@ Crea un proyecto y copia **dos** cadenas de conexión distintas:
 ### 2. Repositorio y deploy
 
 ```bash
-git remote add origin git@github.com:<usuario>/agentflow-lite.git
+git remote add origin git@github.com:<usuario>/aiwork.git
 git push -u origin main
 ```
 
@@ -228,7 +228,7 @@ ANTHROPIC_API_KEY = sk-ant-…
 ANTHROPIC_MODEL  = claude-opus-5
 OPENAI_API_KEY   = sk-…
 OPENAI_MODEL     = gpt-4o-mini
-NEXT_PUBLIC_APP_NAME        = AgentFlow Lite
+NEXT_PUBLIC_APP_NAME        = Aiwork
 NEXT_PUBLIC_DEMO_COMPANY_ID = demo-company-001
 ```
 
@@ -310,7 +310,7 @@ OPENAI_MODEL="gpt-4o-mini"
 RESEND_API_KEY=""
 EMAIL_FROM="noreply@example.com"
 
-NEXT_PUBLIC_APP_NAME="AgentFlow Lite"
+NEXT_PUBLIC_APP_NAME="Aiwork"
 NEXT_PUBLIC_DEMO_COMPANY_ID="demo-company-001"
 
 # Límites del chat público (opcionales — ver sección de despliegue)

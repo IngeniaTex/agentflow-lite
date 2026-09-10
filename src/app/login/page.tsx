@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bot, MessageSquare } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { LoginForm } from "@/components/auth/login-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
@@ -23,10 +24,7 @@ export default async function LoginPage({
     <main className="flex min-h-screen items-center justify-center px-6 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Bot className="h-6 w-6" />
-          </span>
-          <h1 className="text-2xl font-semibold tracking-tight">{APP_NAME}</h1>
+          <BrandLogo size="lg" />
           <p className="text-sm text-muted-foreground">
             Framework modular de agentes IA para PyMEs
           </p>

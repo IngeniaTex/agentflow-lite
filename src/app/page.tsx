@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Bot,
   CalendarCheck,
   FileText,
   LayoutDashboard,
@@ -11,6 +10,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BrandLogo } from "@/components/brand-logo";
 import { APP_NAME } from "@/lib/constants";
 
 const AGENTS = [
@@ -40,12 +40,7 @@ export default function HomePage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-16 px-6 py-14">
       <header className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Bot className="h-5 w-5" />
-          </span>
-          <span className="text-lg font-semibold">{APP_NAME}</span>
-        </div>
+        <BrandLogo />
         <nav className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm">
             <Link href="/chat">Probar el chat</Link>

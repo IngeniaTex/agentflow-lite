@@ -14,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { APP_NAME } from "@/lib/constants";
+import { BrandLogo } from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -35,11 +35,8 @@ export function Sidebar() {
   return (
     <aside className="border-b border-border bg-card lg:h-screen lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r">
       <div className="flex items-center gap-2 px-5 py-4">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Bot className="h-4 w-4" />
-        </span>
         <div className="leading-tight">
-          <p className="text-sm font-semibold">{APP_NAME}</p>
+          <BrandLogo size="sm" />
           <p className="text-xs text-muted-foreground">Agentes IA para PyMEs</p>
         </div>
       </div>

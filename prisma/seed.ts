@@ -1,5 +1,5 @@
 /**
- * Seed de AgentFlow Lite.
+ * Seed de Aiwork.
  *
  * Crea la empresa demo "Clínica Médica Horizonte", dos usuarios de prueba
  * (ADMIN y OPERATOR), el catálogo de 4 agentes base y datos operativos
@@ -129,7 +129,7 @@ const KNOWLEDGE = [
 ];
 
 async function main() {
-  console.log("🌱 Sembrando datos demo de AgentFlow Lite...");
+  console.log("🌱 Sembrando datos demo de Aiwork...");
 
   // Limpieza previa para que el seed sea repetible.
   await prisma.metricEvent.deleteMany({ where: { companyId: DEMO_COMPANY_ID } });
