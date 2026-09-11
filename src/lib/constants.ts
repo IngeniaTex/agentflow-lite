@@ -1,5 +1,5 @@
 /**
- * Constantes globales de AgentFlow Lite.
+ * Constantes globales de Aiwork.
  *
  * El modo demo fijo (demoCompanyId / demoUserId) fue reemplazado por la sesión:
  * - Rutas protegidas del dashboard -> `getCurrentCompanyId()` (src/lib/require-session.ts)
@@ -15,9 +15,9 @@ export const demoCompanyId =
 export const publicDemoCompanyId = demoCompanyId;
 
 /** Slug fijo de la empresa demo para el chat público. */
-export const publicDemoCompanySlug = "clinica-dental-sonrisa";
+export const publicDemoCompanySlug = "clinica-medica-horizonte";
 
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "AgentFlow Lite";
+export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "Aiwork";
 
 /** Slugs del catálogo base de agentes. */
 export const AGENT_SLUGS = {

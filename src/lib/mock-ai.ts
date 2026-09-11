@@ -45,7 +45,7 @@ export function detectIntent(message: string): Intent {
   );
 
   // Una intención de cita gana sobre una de precio cuando ambas aparecen
-  // ("quiero agendar una limpieza, ¿cuánto cuesta?" -> primero la cita).
+  // ("quiero agendar una consulta, ¿cuánto cuesta?" -> primero la cita).
   const appointment = ranked.find((r) => r.agent.intents.includes("APPOINTMENT"));
   const quote = ranked.find((r) => r.agent.intents.includes("QUOTE"));
   if (appointment && appointment.score > 0 && quote && appointment.score >= quote.score) {
@@ -74,16 +74,23 @@ export function extractContactData(message: string) {
 /** Busca el servicio mencionado dentro de la base de conocimiento. */
 export function matchService(message: string, knowledge: KnowledgeItem[]) {
   const text = normalize(message);
+  const ignored = new Set(["para", "como", "desde", "hasta", "sobre", "entre", "servicio"]);
 
-  for (const item of knowledge) {
-    const title = normalize(item.title);
-    const words = title.split(/\s+/).filter((word) => word.length > 3);
-    const matches = words.filter((word) => text.includes(word)).length;
-    if (words.length > 0 && matches >= Math.min(2, words.length)) {
-      return item;
-    }
-  }
-  return undefined;
+  const ranked = knowledge
+    .map((item) => {
+      const words = normalize(`${item.title} ${item.content}`)
+        .split(/[^a-z0-9]+/)
+        .filter((word) => word.length > 2 && !ignored.has(word));
+      const uniqueWords = [...new Set(words)];
+      const matches = uniqueWords.filter((word) => text.includes(word)).length;
+      const titleMatches = normalize(item.title)
+        .split(/[^a-z0-9]+/)
+        .filter((word) => word.length > 2 && text.includes(word)).length;
+      return { item, score: matches + titleMatches * 2 };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  return (ranked[0]?.score ?? 0) >= 2 ? ranked[0].item : undefined;
 }
 
 /** Extrae el primer monto ($800, 800 MXN, 1,200) de un texto. */
@@ -94,11 +101,31 @@ export function extractAmount(text: string): number | undefined {
   return Number.isFinite(amount) && amount > 0 ? amount : undefined;
 }
 
+function serviceFromConversation(context: AgentContext, message: string) {
+  const current = matchService(message, context.knowledge);
+  if (current) return current;
+
+  for (const turn of [...context.history].reverse()) {
+    if (turn.sender !== "CUSTOMER") continue;
+    const previous = matchService(turn.content, context.knowledge);
+    if (previous) return previous;
+  }
+  return undefined;
+}
+
+function defaultService(context: AgentContext) {
+  const profile = normalize(
+    `${context.company.industry ?? ""} ${context.company.description ?? ""}`,
+  );
+  if (/medic|salud|clinic/.test(profile)) return "Consulta de medicina general";
+  if (/software|tecnolog|digital|sistemas/.test(profile)) return "Consultoría tecnológica";
+  return "Servicio solicitado";
+}
+
 function knowledgeSnippet(context: AgentContext, message: string) {
-  const match = matchService(message, context.knowledge);
+  const match = serviceFromConversation(context, message);
   if (match) return match.content;
-  const faq = context.knowledge.find((item) => item.type === "FAQ");
-  return faq?.content;
+  return undefined;
 }
 
 function greeting(context: AgentContext) {
@@ -115,8 +142,8 @@ export function buildMockDecision(
   intent: Intent = detectIntent(message),
 ): AgentDecision {
   const contact = extractContactData(message);
-  const service = matchService(message, context.knowledge);
-  const serviceName = service?.title ?? "Servicio general";
+  const service = serviceFromConversation(context, message);
+  const serviceName = service?.title ?? defaultService(context);
   const company = context.company.name;
 
   const baseCustomer = {
@@ -192,7 +219,7 @@ export function buildMockDecision(
     source: "mock",
     reply: snippet
       ? `${greeting(context)} ${snippet}${hours} ¿Te gustaría agendar una cita o recibir una cotización?`
-      : `${greeting(context)} Soy la recepcionista virtual de ${company}.${hours} Puedo ayudarte a agendar una cita, darte una cotización preliminar o resolver tus dudas. ¿Qué necesitas?`,
+      : `${greeting(context)} Soy la recepcionista virtual de ${company}.${hours} Puedo explicarte nuestros servicios, proceso de trabajo y tiempos estimados, además de ayudarte a agendar una llamada o preparar una cotización preliminar. ¿Qué proyecto tienes en mente?`,
     summary: "Consulta general atendida por la Recepcionista IA.",
     customer: baseCustomer,
   };

@@ -152,7 +152,7 @@ export function CustomersView({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="serviceInterest">Servicio de interés</Label>
-                <Input id="serviceInterest" name="serviceInterest" placeholder="Limpieza dental" />
+                <Input id="serviceInterest" name="serviceInterest" placeholder="Consulta de medicina general" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Estado</Label>

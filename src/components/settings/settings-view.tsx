@@ -242,7 +242,7 @@ export function SettingsView({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="title">Título</Label>
-                  <Input id="title" name="title" required placeholder="Limpieza dental" />
+                  <Input id="title" name="title" required placeholder="Consulta de medicina general" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipo</Label>
@@ -261,7 +261,7 @@ export function SettingsView({
                   id="content"
                   name="content"
                   required
-                  placeholder="La limpieza dental cuesta $800 MXN e incluye..."
+                  placeholder="La consulta médica cuesta $800 MXN e incluye..."
                 />
               </div>
               <Button type="submit" size="sm" disabled={savingKnowledge}>

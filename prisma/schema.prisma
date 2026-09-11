@@ -1,4 +1,4 @@
-// AgentFlow Lite — Framework Modular de Agentes IA para PyMEs
+// Aiwork — Framework Modular de Agentes IA para PyMEs
 // Base de datos: PostgreSQL (compatible con Supabase)
 
 generator client {

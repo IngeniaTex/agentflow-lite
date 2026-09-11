@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Qué es
 
-AgentFlow Lite — framework modular de agentes IA para PyMEs. Next.js 15 (App Router) + Prisma +
+Aiwork — framework modular de agentes IA para PyMEs. Next.js 15 (App Router) + Prisma +
 PostgreSQL + NextAuth v5. Todo el código, comentarios y UI están **en español**; mantén ese idioma
 al escribir código nuevo, comentarios y textos de interfaz.
 

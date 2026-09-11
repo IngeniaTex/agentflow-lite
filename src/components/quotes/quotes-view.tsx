@@ -141,7 +141,7 @@ export function QuotesView({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="service">Servicio *</Label>
-                <Input id="service" name="service" required placeholder="Limpieza dental" />
+                <Input id="service" name="service" required placeholder="Consulta de medicina general" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="amount">Monto (MXN) *</Label>

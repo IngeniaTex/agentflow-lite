@@ -24,7 +24,7 @@ const SELECT = { id: true, name: true, slug: true } as const;
 /** Formato de slug aceptado: minúsculas, números y guiones simples. */
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-/** Convierte un nombre en slug: "Clínica Dental" -> "clinica-dental". */
+/** Convierte un nombre en slug: "Clínica Médica" -> "clinica-medica". */
 export function slugify(value: string): string {
   return value
     .normalize("NFD")
