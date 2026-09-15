@@ -22,6 +22,8 @@ export interface AgentContext {
   knowledge: KnowledgeItem[];
   history: { sender: string; content: string }[];
   customerName?: string | null;
+  customerPhone?: string | null;
+  customerEmail?: string | null;
 }
 
 const normalize = (text: string) =>
@@ -69,6 +71,35 @@ export function extractContactData(message: string) {
     phone,
     name: name ? name.replace(/\s+/g, " ").trim() : undefined,
   };
+}
+
+function contactFromConversation(message: string, context: AgentContext) {
+  const current = extractContactData(message);
+  const previous = [...context.history]
+    .reverse()
+    .filter((turn) => turn.sender === "CUSTOMER")
+    .map((turn) => extractContactData(turn.content));
+
+  return {
+    name: current.name ?? context.customerName ?? previous.find((item) => item.name)?.name,
+    phone: current.phone ?? context.customerPhone ?? previous.find((item) => item.phone)?.phone,
+    email: current.email ?? context.customerEmail ?? previous.find((item) => item.email)?.email,
+  };
+}
+
+function missingContactPrompt(contact: ReturnType<typeof contactFromConversation>) {
+  const missing = [
+    !contact.name && "nombre completo",
+    !contact.phone && "número de teléfono",
+    !contact.email && "correo electrónico",
+  ].filter(Boolean) as string[];
+
+  if (missing.length === 0) return null;
+  const fields =
+    missing.length === 1
+      ? missing[0]
+      : `${missing.slice(0, -1).join(", ")} y ${missing.at(-1)}`;
+  return `Antes de continuar necesito tu ${fields}. Puedes ${missing.length === 1 ? "compartirlo" : "compartirlos"} en este chat.`;
 }
 
 /** Busca el servicio mencionado dentro de la base de conocimiento. */
@@ -141,7 +172,7 @@ export function buildMockDecision(
   context: AgentContext,
   intent: Intent = detectIntent(message),
 ): AgentDecision {
-  const contact = extractContactData(message);
+  const contact = contactFromConversation(message, context);
   const service = serviceFromConversation(context, message);
   const serviceName = service?.title ?? defaultService(context);
   const company = context.company.name;
@@ -152,6 +183,17 @@ export function buildMockDecision(
   };
 
   if (intent === "APPOINTMENT") {
+    const contactPrompt = missingContactPrompt(contact);
+    if (contactPrompt) {
+      return {
+        intent,
+        source: "mock",
+        reply: `${greeting(context)} Con gusto te ayudo a solicitar una cita para ${serviceName.toLowerCase()} en ${company}. ${contactPrompt}`,
+        summary: `Solicitud de cita para ${serviceName}; datos de contacto pendientes.`,
+        customer: baseCustomer,
+      };
+    }
+
     const requestedDate = parseSpanishDate(message);
     const fecha = requestedDate.toLocaleString("es-MX", {
       weekday: "long",
@@ -164,7 +206,7 @@ export function buildMockDecision(
     return {
       intent,
       source: "mock",
-      reply: `${greeting(context)} Con gusto registro tu solicitud de cita para ${serviceName.toLowerCase()} en ${company}. La dejo como *solicitada* para el ${fecha}; el equipo te confirma la disponibilidad por teléfono o WhatsApp. ¿Me compartes tu nombre y número de contacto para la confirmación?`,
+      reply: `${greeting(context)} Gracias, ya tengo tu nombre, teléfono y correo. Registro tu solicitud de cita para ${serviceName.toLowerCase()} en ${company}. La dejo como *solicitada* para el ${fecha}; el equipo te confirma la disponibilidad por teléfono o correo.`,
       summary: `Solicitud de cita para ${serviceName}.`,
       customer: baseCustomer,
       appointment: {
@@ -176,6 +218,17 @@ export function buildMockDecision(
   }
 
   if (intent === "QUOTE") {
+    const contactPrompt = missingContactPrompt(contact);
+    if (contactPrompt) {
+      return {
+        intent,
+        source: "mock",
+        reply: `${greeting(context)} Con gusto preparo una cotización preliminar de ${serviceName.toLowerCase()} en ${company}. ${contactPrompt}`,
+        summary: `Cotización de ${serviceName}; datos de contacto pendientes.`,
+        customer: baseCustomer,
+      };
+    }
+
     const amount =
       (service ? extractAmount(service.content) : undefined) ??
       extractAmount(message) ??

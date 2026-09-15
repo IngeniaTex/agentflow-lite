@@ -21,7 +21,12 @@ import {
 } from "@/lib/agent-tools";
 import { generateAgentDecision, isModelEnabled } from "@/lib/ai-provider";
 import { parseSpanishDate, safeParseISO } from "@/lib/date-parsing";
-import { buildMockDecision, detectIntent, type AgentContext } from "@/lib/mock-ai";
+import {
+  buildMockDecision,
+  detectIntent,
+  extractContactData,
+  type AgentContext,
+} from "@/lib/mock-ai";
 import { prisma } from "@/lib/prisma";
 import type { AgentDecision, ChatTurnResult, ExecutedAction } from "@/types";
 
@@ -76,25 +81,13 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
     }),
   ]);
 
-  // 1. Intención y agente
-  const intent = detectIntent(message);
-  const definition = pickAgentDefinition(intent, companyAgents.map((ca) => ca.agent.slug));
-  const companyAgent = companyAgents.find((ca) => ca.agent.slug === definition.slug);
-  const agentRecord =
-    companyAgent?.agent ??
-    (await prisma.agent.findUnique({ where: { slug: definition.slug } }));
-
-  const effectiveDefinition: AgentDefinition = companyAgent?.customPrompt
-    ? { ...definition, defaultPrompt: companyAgent.customPrompt }
-    : definition;
-
-  // 2. Conversación (existente o nueva)
+  // 1. Conversación (existente o nueva)
   const conversation = await resolveConversation({
     companyId,
     conversationId: input.conversationId,
     customerId: input.customerId,
     channel,
-    agentId: agentRecord?.id ?? null,
+    agentId: null,
   });
 
   const history = await prisma.message.findMany({
@@ -110,6 +103,30 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
       })
     : null;
 
+  // 2. Intención y agente. Si el mensaje solo aporta datos de contacto,
+  // recupera la intención pendiente del último mensaje del cliente.
+  const detectedIntent = detectIntent(message);
+  const lastAgentReply = [...history].reverse().find((turn) => turn.sender === "AGENT")?.content;
+  const isWaitingForContact = Boolean(
+    lastAgentReply && /nombre|tel[eé]fono|correo electr[oó]nico/i.test(lastAgentReply),
+  );
+  const pendingIntent = isWaitingForContact
+    ? [...history]
+        .reverse()
+        .filter((turn) => turn.sender === "CUSTOMER")
+        .map((turn) => detectIntent(turn.content))
+        .find((value) => value === "APPOINTMENT" || value === "QUOTE")
+    : undefined;
+  const intent = detectedIntent === "GENERAL" && pendingIntent ? pendingIntent : detectedIntent;
+  const definition = pickAgentDefinition(intent, companyAgents.map((ca) => ca.agent.slug));
+  const companyAgent = companyAgents.find((ca) => ca.agent.slug === definition.slug);
+  const agentRecord =
+    companyAgent?.agent ??
+    (await prisma.agent.findUnique({ where: { slug: definition.slug } }));
+  const effectiveDefinition: AgentDefinition = companyAgent?.customPrompt
+    ? { ...definition, defaultPrompt: companyAgent.customPrompt }
+    : definition;
+
   const context: AgentContext = {
     company,
     knowledge,
@@ -117,6 +134,8 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
     customerName: existingCustomer?.name?.startsWith("Prospecto")
       ? null
       : existingCustomer?.name ?? input.visitor?.name ?? null,
+    customerPhone: existingCustomer?.phone ?? input.visitor?.phone ?? null,
+    customerEmail: existingCustomer?.email ?? input.visitor?.email ?? null,
   };
 
   // 3. Mensaje entrante
@@ -125,24 +144,68 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
   });
 
   // 4. Respuesta del agente (proveedor activo con fallback a mock)
-  let decision: AgentDecision | null = null;
-  if (isModelEnabled) {
-    decision = await generateAgentDecision(message, context, effectiveDefinition, intent);
-  }
-  if (!decision) {
-    decision = buildMockDecision(message, context, intent);
-  }
+  const generatedDecision = isModelEnabled
+    ? await generateAgentDecision(message, context, effectiveDefinition, intent)
+    : null;
+  let decision: AgentDecision =
+    generatedDecision ?? buildMockDecision(message, context, intent);
 
   // 5. Ejecución de herramientas permitidas
   const actions: ExecutedAction[] = [];
   const metrics: MetricEventType[] = ["MESSAGE_RECEIVED", "AI_RESPONSE"];
 
+  const suppliedInChat = [
+    message,
+    ...[...history]
+      .reverse()
+      .filter((turn) => turn.sender === "CUSTOMER")
+      .map((turn) => turn.content),
+  ].map(extractContactData);
   const detectedCustomer = {
     ...decision.customer,
-    name: decision.customer?.name ?? input.visitor?.name,
-    phone: decision.customer?.phone ?? input.visitor?.phone,
-    email: decision.customer?.email ?? input.visitor?.email,
+    name:
+      suppliedInChat.find((contact) => contact.name)?.name ??
+      decision.customer?.name ??
+      input.visitor?.name ??
+      (existingCustomer?.name?.startsWith("Prospecto") ? undefined : existingCustomer?.name),
+    phone:
+      suppliedInChat.find((contact) => contact.phone)?.phone ??
+      decision.customer?.phone ??
+      input.visitor?.phone ??
+      existingCustomer?.phone ??
+      undefined,
+    email:
+      suppliedInChat.find((contact) => contact.email)?.email ??
+      decision.customer?.email ??
+      input.visitor?.email ??
+      existingCustomer?.email ??
+      undefined,
   };
+
+  // Regla de negocio final: ningún proveedor (mock o LLM) puede crear una cita
+  // o cotización sin los tres datos de contacto.
+  if (decision.appointment || decision.quote) {
+    const missing = [
+      !detectedCustomer.name && "nombre completo",
+      !detectedCustomer.phone && "número de teléfono",
+      !detectedCustomer.email && "correo electrónico",
+    ].filter(Boolean) as string[];
+
+    if (missing.length > 0) {
+      const fields =
+        missing.length === 1
+          ? missing[0]
+          : `${missing.slice(0, -1).join(", ")} y ${missing.at(-1)}`;
+      const requestType = decision.appointment ? "la cita" : "la cotización";
+      decision = {
+        ...decision,
+        reply: `Antes de crear ${requestType}, necesito tu ${fields}. Puedes ${missing.length === 1 ? "compartirlo" : "compartirlos"} en este chat.`,
+        customer: detectedCustomer,
+        appointment: undefined,
+        quote: undefined,
+      };
+    }
+  }
 
   const hasContactData = Boolean(
     detectedCustomer.name ||
@@ -160,7 +223,10 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
       data: detectedCustomer,
       source: channel === "WEB_CHAT" ? "WEB_CHAT" : "DASHBOARD",
       existingCustomerId: customerId,
-      status: statusForIntent(decision.intent),
+      status:
+        decision.appointment || decision.quote
+          ? statusForIntent(decision.intent)
+          : "CONTACTED",
     });
     if (!customerId) {
       metrics.push("LEAD_CREATED");
