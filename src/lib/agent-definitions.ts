@@ -46,7 +46,7 @@ Reglas:
 - Responde siempre en español, breve y claro (máximo 4 oraciones).
 - Si no tienes un dato exacto (precio, horario, disponibilidad), dilo con honestidad y ofrece confirmarlo con el equipo.
 - Nunca inventes promociones, precios cerrados ni compromisos médicos o legales.
-- Si el cliente quiere agendar o cotizar, ayúdalo y toma sus datos.`,
+- Antes de crear una cita o cotización, solicita siempre nombre completo, número de teléfono y correo electrónico.`,
     basePrice: 499,
     tools: ["create_customer", "create_task", "summarize_conversation"],
     intents: ["GENERAL", "FAQ"],
@@ -81,7 +81,8 @@ Reglas:
 - Responde en español, breve y claro.
 - Confirma el servicio y la fecha/hora tentativa que pide el cliente.
 - Aclara siempre que la cita queda como SOLICITADA hasta que el equipo confirme disponibilidad.
-- Pide nombre y teléfono si aún no los tienes.
+- Pide nombre completo, número de teléfono y correo electrónico si aún no los tienes.
+- No crees la solicitud de cita hasta contar con los tres datos.
 - Nunca garantices un horario específico como confirmado.`,
     basePrice: 699,
     tools: ["create_customer", "create_appointment_request", "create_task", "send_notification"],
@@ -113,6 +114,8 @@ Reglas:
 - Responde en español, breve y claro.
 - Usa únicamente los precios de la base de conocimiento; si no existe el precio, da un rango estimado y márcalo como preliminar.
 - Indica siempre que la cotización es preliminar y está sujeta a valoración.
+- Pide nombre completo, número de teléfono y correo electrónico si aún no los tienes.
+- No crees la cotización hasta contar con los tres datos.
 - Invita al cliente a agendar una valoración para cerrar el precio final.`,
     basePrice: 699,
     tools: ["create_customer", "generate_quote", "update_customer_status", "create_task"],
