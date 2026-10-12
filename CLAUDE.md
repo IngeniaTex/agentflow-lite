@@ -21,6 +21,7 @@ npm run prisma:studio
 npm run db:reset        # migrate reset (borra y resiembra)
 npm run user:create     # da de alta los .json de ./Users (--dry-run para validar sin escribir)
 npm run company:create  # alta completa de empresa desde los .json de ./Empresas
+npm run knowledge:update # sincroniza la base de conocimiento de una empresa existente (mismo .json)
 ```
 
 No hay UI de administración de usuarios ni ruta `/api/users`: el único código que toca
@@ -42,6 +43,28 @@ Tampoco hay registro ni alta de empresas: `scripts/onboard-company.ts` lee los `
 conocimiento **en una transacción**. Exige al menos un usuario `ADMIN` y valida los slugs de agente
 contra la tabla `agents`, así que el seed debe haber corrido antes. Los correos son únicos en toda
 la plataforma, no por empresa.
+
+La empresa demo del seed es **Clínica Médica Horizonte**, slug `clinica-medica-horizonte`. Ese
+slug está duplicado a mano en `prisma/seed.ts` (`DEMO_COMPANY_SLUG`) y en
+`publicDemoCompanySlug` de `src/lib/constants.ts`; si dejan de coincidir, `/chat` de la demo
+responde 404.
+
+Para una empresa **ya dada de alta**, `npm run knowledge:update` (`scripts/update-knowledge.ts`)
+lee el **mismo** `.json` de `./Empresas` y sincroniza su base de conocimiento. Localiza la empresa
+por `company.slug` e ignora `users` y `agents`. Cada entrada se identifica por su `title`: crea o
+actualiza, nunca borra. `--prune` **archiva** (no borra) lo que ya no está en el archivo; `--company`
+también sobrescribe el perfil (giro, descripción, contacto, horario, tono, nunca slug ni dominio);
+`--dry-run` muestra los cambios. Renombrar un título equivale a crear una entrada nueva y dejar la
+vieja publicada, así que hace falta `--prune`.
+
+Un script de un solo uso no tiene entrada en `package.json` y se corre con `node`:
+
+```bash
+node scripts/update-demo-medical.mjs        # reescribe una base demo ya sembrada de dental a médica
+```
+
+Solo hace falta en bases sembradas antes del cambio de giro (el seed actual ya nace médico) y lanza
+si la empresa destino no existe.
 
 **No hay framework de tests en el proyecto** — ni jest, ni vitest, ni playwright. Para verificar
 cambios: `npx tsc --noEmit`, `npm run lint`, y ejercitar la app con `curl` contra `npm run dev`.
@@ -182,14 +205,37 @@ Notas del SDK: Claude Opus 5 **rechaza `temperature` con un 400** — `anthropic
 
 `src/lib/ai-orchestrator.ts` es el corazón. Flujo de un turno de chat:
 
-1. `detectIntent(message)` — **por palabras clave, sin LLM** (`mock-ai.ts`). Una intención de cita
+1. Se resuelve la conversación (existente o nueva) **antes** de elegir agente, así que
+   `Conversation.agentId` se crea siempre en `null` y el dashboard muestra "Sin agente" en toda
+   conversación nueva. El `agentId` sí queda en clientes, citas, cotizaciones y tareas.
+2. `detectIntent(message)` — **por palabras clave, sin LLM** (`mock-ai.ts`). Una intención de cita
    gana sobre una de precio cuando ambas puntúan igual.
-2. Se elige el `AgentDefinition` de la intención, restringido a los agentes activos de la empresa.
-3. `companyAgent.customPrompt` sobrescribe el `defaultPrompt` si existe.
-4. Se persiste el mensaje del cliente, se genera la decisión, se ejecutan herramientas.
-5. Cada herramienta pasa por **`agentAllows(slug, tool)`** — si el agente no la declara en su lista
+3. **Intención pendiente**: si el turno actual sale `GENERAL` y la última respuesta del agente pedía
+   datos (`/nombre|teléfono|correo electrónico/`), se recupera la última intención `APPOINTMENT` o
+   `QUOTE` del historial. Sin esto, el cliente que solo manda su teléfono perdería el hilo de la cita.
+4. Se elige el `AgentDefinition` de la intención, restringido a los agentes activos de la empresa, y
+   `companyAgent.customPrompt` sobrescribe el `defaultPrompt` si existe.
+5. Se persiste el mensaje del cliente y se genera la decisión (proveedor activo o mock).
+6. **Puerta de contacto**: si la decisión trae `appointment` o `quote` y falta nombre, teléfono o
+   correo, el orquestador **borra esos campos y sustituye la respuesta** por una que pide lo que
+   falta. Es la regla de negocio final: vale igual para el mock y para el LLM, así que un modelo que
+   ignore el prompt tampoco crea la cita. Los datos se rastrean acumulando `extractContactData()`
+   sobre el mensaje actual **y todos los turnos anteriores del cliente**.
+7. Cada herramienta pasa por **`agentAllows(slug, tool)`** — si el agente no la declara en su lista
    `tools`, la acción simplemente no ocurre aunque el modelo la pida.
-6. Se persiste la respuesta y se registran `MetricEvent`.
+8. Se persiste la respuesta y se registran `MetricEvent`.
+
+Trampas de esa puerta:
+
+- `extractContactData()` solo reconoce el nombre tras **"me llamo" / "mi nombre es" / "soy"**. En
+  modo mock, un cliente que escribe su nombre a secas no pasa la puerta. Con LLM sí, porque
+  `decision.customer` cuenta — pero **solo si `confirmedInChat()` encuentra el dato en los mensajes
+  del cliente**; un dato inventado por el modelo se ignora. La API ya no acepta `visitor`.
+- Cuando no hay cita ni cotización, el cliente se guarda con estado `CONTACTED`, no con el estado
+  derivado de la intención: un prospecto a medio capturar ya no aparece como `APPOINTMENT_REQUESTED`.
+- `matchService()` puntúa título (doble) y contenido, y **exige un puntaje mínimo de 2**;
+  `knowledgeSnippet()` ya no cae a la primera FAQ. Base de conocimiento pobre = respuesta genérica,
+  no una FAQ equivocada.
 
 **`src/lib/agent-definitions.ts` es el punto de extensión.** Un agente nuevo se define ahí
 (slug, prompt, `tools`, `intents`, `keywords`) y se siembra en `prisma/seed.ts`.
@@ -202,7 +248,9 @@ Los agentes viven en dos lugares unidos por el `slug`:
 - **tabla `agents`** (base, creada por el seed) — id, precio, estado; `company_agents` la activa por empresa
 
 Al añadir o renombrar un agente hay que tocar **ambos**. Un slug en código sin fila en la base
-degrada silenciosamente (`agentRecord` queda `null` y la conversación se guarda sin `agentId`).
+degrada silenciosamente: `agentRecord` queda `null` y clientes, citas, cotizaciones y tareas se
+guardan sin `agentId`. (La conversación se guarda sin `agentId` siempre, por el orden del
+orquestador — no sirve como síntoma.)
 
 ### Rate limit del chat público
 

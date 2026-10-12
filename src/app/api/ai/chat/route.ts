@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { message, conversationId, visitor, companySlug } = chatMessageSchema.parse(body);
+    const { message, conversationId, companySlug } = chatMessageSchema.parse(body);
 
     let companyId: string;
     if (session) {
@@ -61,7 +61,6 @@ export async function POST(request: Request) {
       companyId,
       message,
       conversationId,
-      visitor,
       channel: session ? "DASHBOARD" : "WEB_CHAT",
     });
 

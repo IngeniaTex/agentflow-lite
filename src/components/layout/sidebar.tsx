@@ -29,7 +29,14 @@ const NAV_ITEMS = [
   { href: "/dashboard/settings", label: "Configuración", icon: Settings },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  /** Ruta del chat de la empresa en sesión (`/chat/<slug>`). */
+  chatPath: string | null;
+  /** Dominio propio del chat, si la empresa tiene uno configurado. */
+  chatDomain: string | null;
+}
+
+export function Sidebar({ chatPath, chatDomain }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -66,16 +73,19 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="hidden px-5 pb-6 lg:block">
-        <Link
-          href="/chat"
-          target="_blank"
-          className="block rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
-        >
-          <strong className="block text-foreground">Chat público</strong>
-          Abre /chat para simular la experiencia del cliente final.
-        </Link>
-      </div>
+      {chatPath && (
+        <div className="hidden px-5 pb-6 lg:block">
+          <Link
+            href={chatDomain ? `https://${chatDomain}` : chatPath}
+            target="_blank"
+            className="block rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+          >
+            <strong className="block text-foreground">Chat de tu empresa</strong>
+            <span className="block break-all font-mono">{chatDomain ?? chatPath}</span>
+            Comparte este enlace con tus clientes.
+          </Link>
+        </div>
+      )}
     </aside>
   );
 }

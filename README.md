@@ -120,6 +120,58 @@ Las rutas de API protegidas usan `requireApiSession()` y **todas las consultas f
 4. Ejecuta **solo las herramientas permitidas** para ese agente (crear cliente, crear cita, generar cotización, crear tarea, resumir conversación…).
 5. Guarda mensajes, actualiza el estado del prospecto y registra eventos de métrica.
 
+### Reglas de respuesta del chat
+
+**Entrada (`POST /api/ai/chat`)**
+
+- `message` es obligatorio, de 1 a 1000 caracteres (se recorta). Un cuerpo inválido responde `422`.
+- Los visitantes anónimos pasan por el límite de mensajes (ver *Límites del chat público*); los
+  usuarios con sesión no.
+- Empresa que atiende: con sesión, **siempre la del usuario** (aunque mande otro `companySlug`). Sin
+  sesión: el slug de `/chat/<slug>` (si no existe, `404`), luego el dominio de la petición
+  (`Company.chatDomain`) y por último la empresa demo por defecto.
+
+**Intención y agente**
+
+- La intención se detecta **por palabras clave, sin LLM**. Si una cita y una cotización empatan,
+  gana la cita.
+- **Intención pendiente:** si el mensaje no trae intención clara y la última respuesta del agente
+  pedía nombre, teléfono o correo, se retoma la última cita o cotización que pidió el cliente. Así,
+  un cliente que solo manda su teléfono no pierde el hilo.
+- Si la empresa definió un `customPrompt` para el agente, reemplaza al prompt por defecto.
+
+**Validación de la respuesta del modelo**
+
+- Con Anthropic, el esquema JSON se aplica del lado del servidor; con OpenAI solo se garantiza JSON
+  válido. En ambos casos `coerceDecision()` (`src/lib/agent-prompt.ts`) revisa el contenido:
+  - `reply` vacío → se descarta y responde el modo mock.
+  - `intent` inválido → se usa la intención detectada por palabras clave.
+  - `appointment` o `quote` sin `service` → se ignoran.
+  - Monto de cotización no numérico o ≤ 0 → la cotización no se crea. Moneda ausente → `MXN`.
+  - Una cita o cotización que el agente elegido no tiene permitida se descarta antes de la puerta
+    de contacto.
+- Rechazo del modelo, respuesta truncada, JSON inválido o error del SDK → modo mock. El chat
+  **siempre responde**.
+
+**Puerta de contacto (regla de negocio final)**
+
+- Ninguna cita ni cotización se crea sin **nombre, teléfono y correo**. Si falta alguno, el
+  orquestador descarta la cita/cotización y sustituye la respuesta por una que pide los datos
+  faltantes. Aplica igual al modo mock y al LLM.
+- Los datos solo cuentan si **el cliente los escribió en el chat** (mensaje actual o anteriores) o
+  si ya están en su ficha de cliente. Lo que extrae el modelo se acepta únicamente si aparece en los
+  mensajes del cliente; un dato inventado por el LLM no pasa la puerta. La API no acepta datos de
+  contacto fuera del mensaje.
+- Reconocimiento en el texto:
+  - **Correo:** formato estándar `usuario@dominio.ext`.
+  - **Teléfono:** de 9 a 15 dígitos (admite `+`, espacios y guiones).
+  - **Nombre:** solo después de *"me llamo"*, *"mi nombre es"* o *"soy"*, máximo dos palabras
+    (*"soy de Monterrey"* no cuenta como nombre). En modo mock, un nombre escrito a secas no se
+    reconoce y el agente lo vuelve a pedir; con un LLM sí, si el modelo lo extrae.
+- Si se registra al cliente sin cita ni cotización, queda en estado **Contactado**.
+- Una fecha de cita que no sea ISO válida se interpreta del texto ("mañana", "el viernes a las 5");
+  sin hora explícita se usa las 10:00.
+
 ---
 
 ## Instalación local
@@ -189,6 +241,9 @@ Abre <http://localhost:3000>.
 | `npm run prisma:studio` | Explorador visual de la base de datos |
 | `npm run db:reset` | Reinicia la base de datos y vuelve a sembrar |
 | `npm run db:local` | Levanta un PostgreSQL local en `./.localdb` (requiere `npm i -D embedded-postgres`) |
+| `npm run user:create` | Da de alta usuarios desde los `.json` de `./Users` |
+| `npm run company:create` | Alta de empresa nueva (empresa, usuarios, agentes y conocimiento) desde `./Empresas` |
+| `npm run knowledge:update` | Sincroniza la base de conocimiento de una empresa existente desde su `.json` de `./Empresas` (`--dry-run`, `--prune`, `--company`) |
 
 ---
 
@@ -364,7 +419,8 @@ El seed también carga: 4 agentes activos, 7 entradas de base de conocimiento, 5
 | `/` | Landing del producto |
 | `/login` | Inicio de sesión |
 | `/chat` | Chat demo público (experiencia del cliente final) |
-| `/api/ai/chat` | Endpoint del orquestador (usa la empresa demo si no hay sesión) |
+| `/chat/<slug>` | Chat público de una empresa específica (`404` si el slug no existe) |
+| `/api/ai/chat` | Endpoint del orquestador (sin sesión: slug, dominio o empresa demo, en ese orden) |
 
 ### Protegidas
 
@@ -451,15 +507,23 @@ Las restricciones se aplican **en el servidor** (`requireApiSession(["ADMIN"])`)
    Hola, quiero una consulta de medicina general el viernes.
    ```
 
-   El **Agente de Citas** responde y crea prospecto + cita + tarea.
-6. Escribe también:
+   El **Agente de Citas** responde y **pide nombre, teléfono y correo** antes de crear la cita.
+6. Responde con tus datos:
+
+   ```txt
+   Me llamo Ana Ruiz, mi teléfono es 5512345678 y mi correo ana@correo.com
+   ```
+
+   El agente retoma la cita pendiente y crea prospecto + cita + tarea.
+7. En la misma conversación escribe:
 
    ```txt
    Quiero saber cuánto cuesta una consulta de medicina general.
    ```
 
-   El **Agente de Cotizaciones** responde con el precio de la base de conocimiento y crea la cotización.
-7. Revisa `/dashboard/conversations`, `/dashboard/appointments`, `/dashboard/tasks` y `/dashboard/quotes`: los registros aparecen ahí.
+   El **Agente de Cotizaciones** responde con el precio de la base de conocimiento y crea la
+   cotización (ya tiene los datos de contacto de los mensajes anteriores).
+8. Revisa `/dashboard/conversations`, `/dashboard/appointments`, `/dashboard/tasks` y `/dashboard/quotes`: los registros aparecen ahí.
 
 ---
 
@@ -511,7 +575,9 @@ Las restricciones se aplican **en el servidor** (`requireApiSession(["ADMIN"])`)
 El modo demo fijo (`demoUserId`) fue reemplazado por la sesión:
 
 - **Rutas protegidas** → `getCurrentCompanyId()` lee `session.user.companyId`.
-- **Chat público** → usa `publicDemoCompanyId` (`demo-company-001`).
+- **Chat público** → resuelve la empresa por slug de la URL (`/chat/<slug>`), luego por dominio
+  (`Company.chatDomain`) y, si no hay ninguno, usa `publicDemoCompanyId` (`demo-company-001`).
+  La lógica vive en `src/lib/tenant.ts`.
 - **Seed** → mantiene `demoCompanyId = "demo-company-001"` como empresa inicial.
 
 ---

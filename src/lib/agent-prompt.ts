@@ -60,7 +60,10 @@ Responde ÚNICAMENTE con un objeto JSON válido con esta forma:
 }
 Reglas del JSON:
 - Incluye "appointment" solo si el cliente pide agendar.
-- Incluye "quote" solo si el cliente pide precio o cotización, con un monto numérico.
+- Incluye "quote" solo si el cliente pide precio o cotización, con un monto numérico mayor que 0.
+- En "customer" usa solo datos que el cliente escribió en la conversación; nunca los inventes.
+- Nunca afirmes en "reply" que una cita o cotización quedó registrada o confirmada: el sistema lo
+  decide después según los datos de contacto. Di que la solicitud queda pendiente de confirmación.
 - Usa la fecha actual (${new Date().toISOString()}) para resolver expresiones como "el viernes" o "mañana".
 - No agregues texto fuera del JSON.`;
 }
@@ -200,12 +203,19 @@ export function coerceDecision(
     };
   }
 
-  if (data.quote && typeof data.quote === "object" && data.quote.service) {
-    const amount = Number(data.quote.amount);
+  // Una cotización sin monto válido no se crea: antes se guardaba en $0.
+  const amount = Number(data.quote?.amount);
+  if (
+    data.quote &&
+    typeof data.quote === "object" &&
+    data.quote.service &&
+    Number.isFinite(amount) &&
+    amount > 0
+  ) {
     decision.quote = {
       service: String(data.quote.service),
       description: data.quote.description ? String(data.quote.description) : undefined,
-      amount: Number.isFinite(amount) && amount > 0 ? amount : 0,
+      amount,
       currency: data.quote.currency ? String(data.quote.currency) : "MXN",
       notes: data.quote.notes ? String(data.quote.notes) : undefined,
     };

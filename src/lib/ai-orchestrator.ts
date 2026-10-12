@@ -36,7 +36,6 @@ export interface OrchestratorInput {
   conversationId?: string | null;
   customerId?: string | null;
   channel?: Channel;
-  visitor?: { name?: string; phone?: string; email?: string };
 }
 
 /**
@@ -90,12 +89,16 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
     agentId: null,
   });
 
-  const history = await prisma.message.findMany({
-    where: { conversationId: conversation.id },
-    orderBy: { createdAt: "asc" },
-    take: 20,
-    select: { sender: true, content: true },
-  });
+  // Los 20 mensajes MÁS RECIENTES, en orden cronológico. Con `asc` + `take`
+  // se cargaban los 20 primeros y las conversaciones largas perdían el contexto.
+  const history = (
+    await prisma.message.findMany({
+      where: { conversationId: conversation.id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: { sender: true, content: true },
+    })
+  ).reverse();
 
   const existingCustomer = conversation.customerId
     ? await prisma.customer.findFirst({
@@ -133,9 +136,9 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
     history,
     customerName: existingCustomer?.name?.startsWith("Prospecto")
       ? null
-      : existingCustomer?.name ?? input.visitor?.name ?? null,
-    customerPhone: existingCustomer?.phone ?? input.visitor?.phone ?? null,
-    customerEmail: existingCustomer?.email ?? input.visitor?.email ?? null,
+      : existingCustomer?.name ?? null,
+    customerPhone: existingCustomer?.phone ?? null,
+    customerEmail: existingCustomer?.email ?? null,
   };
 
   // 3. Mensaje entrante
@@ -154,30 +157,46 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
   const actions: ExecutedAction[] = [];
   const metrics: MetricEventType[] = ["MESSAGE_RECEIVED", "AI_RESPONSE"];
 
-  const suppliedInChat = [
+  // El modelo puede proponer una cita o cotización que su agente no tiene
+  // permitida. Se descarta aquí, antes de la puerta de contacto, para no pedir
+  // datos ni cambiar el estado del cliente por una acción que no va a ocurrir.
+  if (decision.appointment && !agentAllows(definition.slug, "create_appointment_request")) {
+    decision = { ...decision, appointment: undefined };
+  }
+  if (decision.quote && !agentAllows(definition.slug, "generate_quote")) {
+    decision = { ...decision, quote: undefined };
+  }
+
+  const customerMessages = [
     message,
     ...[...history]
       .reverse()
       .filter((turn) => turn.sender === "CUSTOMER")
       .map((turn) => turn.content),
-  ].map(extractContactData);
+  ];
+  const suppliedInChat = customerMessages.map(extractContactData);
+  // Lo que extrae el modelo solo cuenta si de verdad aparece en lo que escribió
+  // el cliente: un dato inventado por el LLM no debe pasar la puerta de contacto.
+  const customerText = customerMessages.join("\n");
+  const fromModel = {
+    name: confirmedInChat(decision.customer?.name, customerText, "name"),
+    phone: confirmedInChat(decision.customer?.phone, customerText, "phone"),
+    email: confirmedInChat(decision.customer?.email, customerText, "email"),
+  };
   const detectedCustomer = {
     ...decision.customer,
     name:
+      fromModel.name ??
       suppliedInChat.find((contact) => contact.name)?.name ??
-      decision.customer?.name ??
-      input.visitor?.name ??
       (existingCustomer?.name?.startsWith("Prospecto") ? undefined : existingCustomer?.name),
     phone:
       suppliedInChat.find((contact) => contact.phone)?.phone ??
-      decision.customer?.phone ??
-      input.visitor?.phone ??
+      fromModel.phone ??
       existingCustomer?.phone ??
       undefined,
     email:
       suppliedInChat.find((contact) => contact.email)?.email ??
-      decision.customer?.email ??
-      input.visitor?.email ??
+      fromModel.email ??
       existingCustomer?.email ??
       undefined,
   };
@@ -417,6 +436,44 @@ async function resolveConversation(params: {
 
   await recordMetric(params.companyId, "CONVERSATION_STARTED", { channel: params.channel });
   return conversation;
+}
+
+const normalizeText = (text: string) =>
+  text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ");
+
+/**
+ * Devuelve el dato de contacto que propuso el modelo solo si aparece en los
+ * mensajes del cliente (sin importar acentos, mayúsculas ni separadores).
+ */
+function confirmedInChat(
+  value: string | null | undefined,
+  customerText: string,
+  kind: "name" | "phone" | "email",
+): string | undefined {
+  const candidate = value?.trim();
+  if (!candidate) return undefined;
+
+  if (kind === "phone") {
+    const digits = candidate.replace(/\D/g, "");
+    if (digits.length < 8) return undefined;
+    return customerText.replace(/[\s().+-]/g, "").includes(digits) ? candidate : undefined;
+  }
+
+  if (kind === "email") {
+    return customerText.toLowerCase().includes(candidate.toLowerCase()) ? candidate : undefined;
+  }
+
+  // Palabra completa: "Ana" no debe confirmarse por aparecer dentro de "mañana".
+  const name = normalizeText(candidate);
+  if (name.length < 2) return undefined;
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z])${escaped}([^a-z]|$)`).test(normalizeText(customerText))
+    ? candidate
+    : undefined;
 }
 
 function statusForIntent(intent: Intent) {
