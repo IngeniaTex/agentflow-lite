@@ -62,9 +62,15 @@ export function detectIntent(message: string): Intent {
 export function extractContactData(message: string) {
   const email = message.match(/[\w.+-]+@[\w-]+\.[\w.]+/)?.[0];
   const phone = message.match(/(?:\+?\d[\s-]?){8,14}\d/)?.[0]?.trim();
-  const name = message.match(
-    /\b(?:me llamo|mi nombre es|soy)\s+([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+)?)/i,
-  )?.[1];
+  // Se revisan todas las coincidencias: en "soy de Monterrey, me llamo Luis"
+  // la primera ("de Monterrey") no es nombre, pero la segunda sí.
+  const name = [
+    ...message.matchAll(
+      /\b(?:me llamo|mi nombre es|soy)\s+([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+)?)/gi,
+    ),
+  ]
+    .map((match) => match[1])
+    .find((candidate) => !NOT_A_NAME.has(normalize(candidate.split(/\s+/)[0])));
 
   return {
     email,
@@ -72,6 +78,11 @@ export function extractContactData(message: string) {
     name: name ? name.replace(/\s+/g, " ").trim() : undefined,
   };
 }
+
+const NOT_A_NAME = new Set([
+  "de", "del", "la", "el", "los", "las", "un", "una", "tu", "su", "muy", "nuevo", "nueva",
+  "cliente", "paciente", "interesado", "interesada", "estudiante", "dueno", "duena",
+]);
 
 function contactFromConversation(message: string, context: AgentContext) {
   const current = extractContactData(message);
@@ -132,13 +143,23 @@ export function extractAmount(text: string): number | undefined {
   return Number.isFinite(amount) && amount > 0 ? amount : undefined;
 }
 
-function serviceFromConversation(context: AgentContext, message: string) {
-  const current = matchService(message, context.knowledge);
+function serviceFromConversation(
+  context: AgentContext,
+  message: string,
+  onlyServices = false,
+) {
+  // Para nombrar el servicio de una cita o cotización solo valen las entradas
+  // SERVICE: una FAQ o un resumen de precios que menciona todos los servicios
+  // ganaba el puntaje y la cita quedaba "para cómo solicitar una cotización".
+  const services = context.knowledge.filter((item) => item.type === "SERVICE");
+  const pool = onlyServices && services.length > 0 ? services : context.knowledge;
+
+  const current = matchService(message, pool);
   if (current) return current;
 
   for (const turn of [...context.history].reverse()) {
     if (turn.sender !== "CUSTOMER") continue;
-    const previous = matchService(turn.content, context.knowledge);
+    const previous = matchService(turn.content, pool);
     if (previous) return previous;
   }
   return undefined;
@@ -173,7 +194,7 @@ export function buildMockDecision(
   intent: Intent = detectIntent(message),
 ): AgentDecision {
   const contact = contactFromConversation(message, context);
-  const service = serviceFromConversation(context, message);
+  const service = serviceFromConversation(context, message, true);
   const serviceName = service?.title ?? defaultService(context);
   const company = context.company.name;
 

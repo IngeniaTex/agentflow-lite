@@ -1,5 +1,6 @@
 import { DashboardHeader } from "@/components/layout/dashboard-header";
 import { Sidebar } from "@/components/layout/sidebar";
+import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/require-session";
 
 /**
@@ -8,11 +9,20 @@ import { requireSession } from "@/lib/require-session";
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
-  const { name, email, role, companyName } = session.user;
+  const { name, email, role, companyName, companyId } = session.user;
+
+  // Enlace al chat de la empresa del usuario (visible para todos los roles).
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { slug: true, chatDomain: true },
+  });
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <Sidebar />
+      <Sidebar
+        chatPath={company ? `/chat/${company.slug}` : null}
+        chatDomain={company?.chatDomain ?? null}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <DashboardHeader
           name={name ?? "Usuario"}

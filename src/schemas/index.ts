@@ -212,13 +212,9 @@ export const chatMessageSchema = z.object({
   conversationId: z.string().optional().nullable(),
   /** Empresa del chat público; si falta se resuelve por dominio (ver lib/tenant.ts). */
   companySlug: companySlugSchema.optional().nullable(),
-  visitor: z
-    .object({
-      name: z.string().optional(),
-      phone: z.string().optional(),
-      email: z.string().optional(),
-    })
-    .optional(),
+  // Sin campo `visitor`: los datos de contacto solo cuentan si el cliente los
+  // escribe en el chat. Un campo así permitía crear citas con datos inventados
+  // desde la API, sin pasar por la puerta de contacto.
 });
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
