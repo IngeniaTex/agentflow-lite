@@ -16,11 +16,35 @@ interface ChatMessage {
   actions?: { tool: string; label: string }[];
 }
 
+/**
+ * Preguntas sugeridas genéricas (sirven para cualquier empresa). Cada una apunta
+ * a una categoría de la base de conocimiento o a un agente, para que la
+ * respuesta salga directa: servicios (SERVICE), precios (PRICING), horario y
+ * ubicación (FAQ), citas y cotizaciones.
+ */
 const SUGGESTIONS = [
-  "Hola, quiero saber cuánto cuesta una consulta de medicina general.",
-  "Quiero agendar una cita para el viernes.",
-  "Me puedes hacer una cotización.",
+  "¿Qué servicios ofrecen?",
+  "¿Cuáles son sus precios?",
+  "¿Cuál es su horario y ubicación?",
+  "Quiero agendar una cita",
+  "Quiero una cotización",
 ];
+
+/**
+ * Acciones que el cliente final sí debe ver. El resto ("Conversación resumida",
+ * "Prospecto registrado", tareas internas) son operación del negocio y solo
+ * se consultan en el dashboard.
+ */
+const CUSTOMER_ACTION_LABELS: Record<string, string> = {
+  create_appointment_request: "Solicitud de cita registrada",
+  generate_quote: "Cotización preliminar registrada",
+};
+
+function customerActions(actions: ChatTurnResult["actions"]) {
+  return actions
+    .filter((action) => action.tool in CUSTOMER_ACTION_LABELS)
+    .map((action) => ({ tool: action.tool, label: CUSTOMER_ACTION_LABELS[action.tool] }));
+}
 
 export function ChatWidget({
   companyName,
@@ -99,7 +123,7 @@ export function ChatWidget({
           sender: "AGENT",
           content: data.reply,
           agentName: data.agent.name,
-          actions: data.actions,
+          actions: customerActions(data.actions),
         },
       ]);
     } catch {

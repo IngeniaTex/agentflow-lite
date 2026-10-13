@@ -1,0 +1,201 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1300" viewBox="0 0 1280 1300" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M1,1 L9,5 L1,9" fill="none" stroke="#57606a" stroke-width="1.6"/>
+  </marker>
+</defs>
+<rect width="1280" height="1300" fill="#f6f8fa"/>
+<rect x="16" y="26" width="6" height="40" rx="3" fill="#2f7a55"/>
+<text x="34" y="58" font-size="30" font-weight="700" fill="#1f2328">Aiwork: del chat al dashboard</text>
+<text x="1260" y="56" font-size="14" fill="#57606a" text-anchor="end">Next.js 15 · Prisma · PostgreSQL · Auth.js</text>
+<rect x="16" y="92" width="1248" height="220" rx="12" fill="#ffffff" stroke="#d0d7de" stroke-width="1.4"/>
+<rect x="28" y="104" width="128" height="196" rx="8" fill="#3b6ea8"/>
+<text x="92" y="198.0" font-size="19" font-weight="700" fill="#ffffff" text-anchor="middle">Entrada</text>
+<text x="92" y="220.0" font-size="11.5" font-weight="normal" fill="#ffffff" text-anchor="middle">chat público</text>
+<rect x="176" y="154" width="150" height="76" rx="9" fill="#eef4fb" stroke="#3b6ea8" stroke-width="1.6"/>
+<text x="251.0" y="189.5" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Cliente final</text>
+<text x="251.0" y="208.5" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">escribe en el chat</text>
+<rect x="376" y="154" width="180" height="76" rx="9" fill="#eef4fb" stroke="#3b6ea8" stroke-width="1.6"/>
+<text x="466.0" y="182.0" font-size="14" font-weight="600" fill="#1f2328" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">/chat/&lt;slug&gt;</text>
+<text x="466.0" y="201.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">o dominio propio</text>
+<text x="466.0" y="216.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">(/chat = empresa demo)</text>
+<rect x="606" y="154" width="210" height="76" rx="9" fill="#eef4fb" stroke="#3b6ea8" stroke-width="1.6"/>
+<text x="711.0" y="182.0" font-size="14" font-weight="600" fill="#1f2328" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">POST /api/ai/chat</text>
+<text x="711.0" y="201.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">límite por IP y diario → 429</text>
+<text x="711.0" y="216.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">zod: 1–1000 caracteres → 422</text>
+<rect x="866" y="154" width="200" height="76" rx="9" fill="#eef4fb" stroke="#3b6ea8" stroke-width="1.6"/>
+<text x="966.0" y="182.0" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Empresa (tenant)</text>
+<text x="966.0" y="201.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">sesión › slug › dominio › demo</text>
+<text x="966.0" y="216.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">slug inexistente → 404</text>
+<rect x="1110" y="154" width="140" height="76" rx="9" fill="#ffffff" stroke="#3b6ea8" stroke-width="1.6"/>
+<text x="1180.0" y="189.5" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Orquestador</text>
+<text x="1180.0" y="208.5" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">siguiente capa ↓</text>
+<line x1="326" y1="192" x2="372" y2="192" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="349.0" y="184" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">mensaje</text>
+<line x1="556" y1="192" x2="602" y2="192" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="579.0" y="184" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">fetch</text>
+<line x1="816" y1="192" x2="862" y2="192" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="839.0" y="184" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">valida</text>
+<line x1="1066" y1="192" x2="1106" y2="192" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="716" y="282" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle" font-style="italic">Con sesión la empresa SIEMPRE es la del usuario: impide escribir en otro tenant desde el chat.</text>
+<rect x="16" y="334" width="1248" height="220" rx="12" fill="#ffffff" stroke="#d0d7de" stroke-width="1.4"/>
+<rect x="28" y="346" width="128" height="196" rx="8" fill="#2f7a55"/>
+<text x="92" y="440.0" font-size="19" font-weight="700" fill="#ffffff" text-anchor="middle">Orquestador</text>
+<text x="92" y="462.0" font-size="11.5" font-weight="normal" fill="#ffffff" text-anchor="middle">ai-orchestrator.ts</text>
+<rect x="176" y="356" width="190" height="80" rx="9" fill="#edf7f1" stroke="#2f7a55" stroke-width="1.6"/>
+<text x="271.0" y="386.0" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Conversación</text>
+<text x="271.0" y="405.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">existente o nueva</text>
+<text x="271.0" y="420.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">últimos 20 mensajes</text>
+<rect x="416" y="356" width="210" height="80" rx="9" fill="#edf7f1" stroke="#2f7a55" stroke-width="1.6"/>
+<text x="521.0" y="386.0" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Intención</text>
+<text x="521.0" y="405.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">palabras clave, sin LLM</text>
+<text x="521.0" y="420.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">retoma cita/cotización pendiente</text>
+<rect x="676" y="356" width="220" height="80" rx="9" fill="#edf7f1" stroke="#2f7a55" stroke-width="1.6"/>
+<text x="786.0" y="386.0" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Agente</text>
+<text x="786.0" y="405.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">AGENT_DEFINITIONS ∩ activos</text>
+<text x="786.0" y="420.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">customPrompt de la empresa</text>
+<rect x="946" y="356" width="180" height="80" rx="9" fill="#edf7f1" stroke="#2f7a55" stroke-width="1.6"/>
+<text x="1036.0" y="386.0" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Contexto</text>
+<text x="1036.0" y="405.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">empresa + conocimiento</text>
+<text x="1036.0" y="420.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">+ historial</text>
+<rect x="1166" y="356" width="84" height="80" rx="9" fill="#ffffff" stroke="#2f7a55" stroke-width="1.6"/>
+<text x="1208.0" y="393.5" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">IA</text>
+<text x="1208.0" y="412.5" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">↓</text>
+<line x1="366" y1="396" x2="412" y2="396" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="389.0" y="388" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">historial</text>
+<line x1="626" y1="396" x2="672" y2="396" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="649.0" y="388" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">intent</text>
+<line x1="896" y1="396" x2="942" y2="396" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="919.0" y="388" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">prompt</text>
+<line x1="1126" y1="396" x2="1162" y2="396" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M946,483 v44 a90.0,9 0 0 0 180,0 v-44" fill="#edf7f1" stroke="#2f7a55" stroke-width="1.6"/>
+<ellipse cx="1036.0" cy="483" rx="90.0" ry="9" fill="#edf7f1" stroke="#2f7a55" stroke-width="1.6"/>
+<text x="1036" y="506" font-size="13" font-weight="600" fill="#1f2328" text-anchor="middle">Base de conocimiento</text>
+<text x="1036" y="523" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">solo PUBLISHED · por companyId</text>
+<line x1="1036" y1="474" x2="1036" y2="440" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="1140" y="462" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">FAQ, servicios, precios</text>
+<path d="M416,483 v44 a105.0,9 0 0 0 210,0 v-44" fill="#edf7f1" stroke="#2f7a55" stroke-width="1.6"/>
+<ellipse cx="521.0" cy="483" rx="105.0" ry="9" fill="#edf7f1" stroke="#2f7a55" stroke-width="1.6"/>
+<text x="521" y="506" font-size="13" font-weight="600" fill="#1f2328" text-anchor="middle">agent-definitions.ts</text>
+<text x="521" y="523" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">prompt · tools · intents · keywords</text>
+<line x1="626" y1="505" x2="760" y2="440" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="735" y="499" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">slug ↔ tabla agents</text>
+<rect x="16" y="576" width="1248" height="220" rx="12" fill="#ffffff" stroke="#d0d7de" stroke-width="1.4"/>
+<rect x="28" y="588" width="128" height="196" rx="8" fill="#9a6a2f"/>
+<text x="92" y="682.0" font-size="19" font-weight="700" fill="#ffffff" text-anchor="middle">Proveedor IA</text>
+<text x="92" y="704.0" font-size="11.5" font-weight="normal" fill="#ffffff" text-anchor="middle">ai-provider.ts</text>
+<rect x="176" y="638" width="170" height="80" rx="9" fill="#fbf4ea" stroke="#9a6a2f" stroke-width="1.6"/>
+<text x="261.0" y="668.0" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Selector</text>
+<text x="261.0" y="687.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">AI_PROVIDER o autodetecta</text>
+<text x="261.0" y="702.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">sin llave → mock</text>
+<rect x="396" y="594" width="210" height="50" rx="9" fill="#fbf4ea" stroke="#9a6a2f" stroke-width="1.6"/>
+<text x="501.0" y="616.5" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Anthropic</text>
+<text x="501.0" y="635.5" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">json_schema del lado servidor</text>
+<rect x="396" y="656" width="210" height="50" rx="9" fill="#fbf4ea" stroke="#9a6a2f" stroke-width="1.6"/>
+<text x="501.0" y="678.5" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">OpenAI</text>
+<text x="501.0" y="697.5" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">json_object (solo sintaxis)</text>
+<rect x="396" y="718" width="210" height="50" rx="9" fill="#fbf4ea" stroke="#9a6a2f" stroke-width="1.6"/>
+<text x="501.0" y="740.5" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Mock</text>
+<text x="501.0" y="759.5" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">reglas + base de conocimiento</text>
+<line x1="346" y1="678" x2="392" y2="619" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<line x1="346" y1="678" x2="392" y2="681" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<line x1="346" y1="678" x2="392" y2="743" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<rect x="666" y="620" width="230" height="116" rx="9" fill="#fbf4ea" stroke="#9a6a2f" stroke-width="1.6"/>
+<text x="781.0" y="653.0" font-size="14" font-weight="600" fill="#1f2328" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">coerceDecision()</text>
+<text x="781.0" y="672.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">reply vacío → mock</text>
+<text x="781.0" y="687.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">intent inválido → el detectado</text>
+<text x="781.0" y="702.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">cotización sin monto → se descarta</text>
+<text x="781.0" y="717.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">error o rechazo → Mock</text>
+<line x1="606" y1="619" x2="662" y2="661" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<line x1="606" y1="681" x2="662" y2="678" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M606,754 L1098,754 L1098,744" fill="none" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="850" y="772" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">decisión directa (sin coerceDecision)</text>
+<rect x="946" y="616" width="304" height="124" rx="9" fill="#fbf4ea" stroke="#9a6a2f" stroke-width="1.6"/>
+<text x="1098.0" y="642" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Decisión del agente</text>
+<rect x="962" y="656" width="86" height="30" rx="6" fill="#ffffff" stroke="#9a6a2f" stroke-width="1.2"/>
+<text x="1005.0" y="676" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">reply</text>
+<rect x="1057" y="656" width="86" height="30" rx="6" fill="#ffffff" stroke="#9a6a2f" stroke-width="1.2"/>
+<text x="1100.0" y="676" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">intent</text>
+<rect x="1152" y="656" width="86" height="30" rx="6" fill="#ffffff" stroke="#9a6a2f" stroke-width="1.2"/>
+<text x="1195.0" y="676" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">summary</text>
+<rect x="962" y="696" width="86" height="30" rx="6" fill="#ffffff" stroke="#9a6a2f" stroke-width="1.2"/>
+<text x="1005.0" y="716" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">customer</text>
+<rect x="1057" y="696" width="86" height="30" rx="6" fill="#ffffff" stroke="#9a6a2f" stroke-width="1.2"/>
+<text x="1100.0" y="716" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">appointment</text>
+<rect x="1152" y="696" width="86" height="30" rx="6" fill="#ffffff" stroke="#9a6a2f" stroke-width="1.2"/>
+<text x="1195.0" y="716" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">quote</text>
+<line x1="896" y1="678" x2="942" y2="678" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<rect x="16" y="818" width="1248" height="220" rx="12" fill="#ffffff" stroke="#d0d7de" stroke-width="1.4"/>
+<rect x="28" y="830" width="128" height="196" rx="8" fill="#6b4f9e"/>
+<text x="92" y="924.0" font-size="19" font-weight="700" fill="#ffffff" text-anchor="middle">Reglas</text>
+<text x="92" y="946.0" font-size="11.5" font-weight="normal" fill="#ffffff" text-anchor="middle">y herramientas</text>
+<rect x="176" y="840" width="190" height="84" rx="9" fill="#f3effa" stroke="#6b4f9e" stroke-width="1.6"/>
+<text x="271.0" y="872.0" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Permiso del agente</text>
+<text x="271.0" y="891.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">cita o cotización que el</text>
+<text x="271.0" y="906.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">agente no tiene → se descarta</text>
+<rect x="416" y="840" width="230" height="84" rx="9" fill="#f3effa" stroke="#6b4f9e" stroke-width="1.6"/>
+<text x="531.0" y="872.0" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Puerta de contacto</text>
+<text x="531.0" y="891.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">nombre + teléfono + correo</text>
+<text x="531.0" y="906.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">escritos por el cliente en el chat</text>
+<rect x="696" y="840" width="170" height="84" rx="9" fill="#f3effa" stroke="#6b4f9e" stroke-width="1.6"/>
+<text x="781.0" y="872.0" font-size="14" font-weight="600" fill="#1f2328" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">agentAllows(tool)</text>
+<text x="781.0" y="891.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">solo herramientas</text>
+<text x="781.0" y="906.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">declaradas por el agente</text>
+<line x1="366" y1="882" x2="412" y2="882" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<line x1="646" y1="882" x2="692" y2="882" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="669.0" y="874" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">ok</text>
+<rect x="916" y="840" width="334" height="116" rx="9" fill="#f3effa" stroke="#6b4f9e" stroke-width="1.6"/>
+<text x="1083.0" y="866" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Herramientas</text>
+<rect x="930" y="880" width="96" height="30" rx="6" fill="#ffffff" stroke="#6b4f9e" stroke-width="1.2"/>
+<text x="978.0" y="900" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">Cliente</text>
+<rect x="1034" y="880" width="96" height="30" rx="6" fill="#ffffff" stroke="#6b4f9e" stroke-width="1.2"/>
+<text x="1082.0" y="900" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">Cita</text>
+<rect x="1138" y="880" width="96" height="30" rx="6" fill="#ffffff" stroke="#6b4f9e" stroke-width="1.2"/>
+<text x="1186.0" y="900" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">Cotización</text>
+<rect x="930" y="918" width="96" height="30" rx="6" fill="#ffffff" stroke="#6b4f9e" stroke-width="1.2"/>
+<text x="978.0" y="938" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">Tarea</text>
+<rect x="1034" y="918" width="96" height="30" rx="6" fill="#ffffff" stroke="#6b4f9e" stroke-width="1.2"/>
+<text x="1082.0" y="938" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">Seguimiento</text>
+<rect x="1138" y="918" width="96" height="30" rx="6" fill="#ffffff" stroke="#6b4f9e" stroke-width="1.2"/>
+<text x="1186.0" y="938" font-size="12" font-weight="500" fill="#1f2328" text-anchor="middle">Resumen</text>
+<line x1="866" y1="882" x2="912" y2="882" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<rect x="416" y="966" width="230" height="56" rx="9" fill="#ffffff" stroke="#6b4f9e" stroke-width="1.6"/>
+<text x="531.0" y="991.5" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Respuesta al cliente</text>
+<text x="531.0" y="1010.5" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">pide los datos que faltan</text>
+<line x1="531" y1="924" x2="531" y2="962" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="580" y="946" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">faltan datos</text>
+<rect x="696" y="966" width="170" height="56" rx="9" fill="#ffffff" stroke="#6b4f9e" stroke-width="1.6"/>
+<text x="781.0" y="991.5" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">MetricEvent</text>
+<text x="781.0" y="1010.5" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">métricas del dashboard</text>
+<rect x="16" y="1060" width="1248" height="220" rx="12" fill="#ffffff" stroke="#d0d7de" stroke-width="1.4"/>
+<rect x="28" y="1072" width="128" height="196" rx="8" fill="#2b7f8c"/>
+<text x="92" y="1166.0" font-size="19" font-weight="700" fill="#ffffff" text-anchor="middle">Dashboard</text>
+<text x="92" y="1188.0" font-size="11.5" font-weight="normal" fill="#ffffff" text-anchor="middle">equipo interno</text>
+<rect x="176" y="1122" width="160" height="80" rx="9" fill="#eaf6f7" stroke="#2b7f8c" stroke-width="1.6"/>
+<text x="256.0" y="1152.0" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Usuario interno</text>
+<text x="256.0" y="1171.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">ADMIN · OPERATOR</text>
+<text x="256.0" y="1186.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">VIEWER</text>
+<rect x="386" y="1122" width="170" height="80" rx="9" fill="#eaf6f7" stroke="#2b7f8c" stroke-width="1.6"/>
+<text x="471.0" y="1152.0" font-size="14" font-weight="600" fill="#1f2328" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">/login</text>
+<text x="471.0" y="1171.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">Auth.js Credentials</text>
+<text x="471.0" y="1186.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">bcrypt</text>
+<rect x="606" y="1122" width="160" height="80" rx="9" fill="#eaf6f7" stroke="#2b7f8c" stroke-width="1.6"/>
+<text x="686.0" y="1159.5" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Sesión JWT</text>
+<text x="686.0" y="1178.5" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">companyId · role</text>
+<rect x="816" y="1122" width="210" height="80" rx="9" fill="#eaf6f7" stroke="#2b7f8c" stroke-width="1.6"/>
+<text x="921.0" y="1152.0" font-size="14.5" font-weight="600" fill="#1f2328" text-anchor="middle">Páginas y API</text>
+<text x="921.0" y="1171.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">requireSession()</text>
+<text x="921.0" y="1186.0" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">requireApiSession(roles)</text>
+<line x1="336" y1="1162" x2="382" y2="1162" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<line x1="556" y1="1162" x2="602" y2="1162" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<line x1="766" y1="1162" x2="812" y2="1162" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M1076,1125 v74 a87.0,9 0 0 0 174,0 v-74" fill="#eaf6f7" stroke="#2b7f8c" stroke-width="1.6"/>
+<ellipse cx="1163.0" cy="1125" rx="87.0" ry="9" fill="#eaf6f7" stroke="#2b7f8c" stroke-width="1.6"/>
+<text x="1163" y="1162" font-size="14" font-weight="600" fill="#1f2328" text-anchor="middle">PostgreSQL</text>
+<text x="1163" y="1179" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">Prisma · Supabase</text>
+<text x="1163" y="1194" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">where: { companyId }</text>
+<line x1="1026" y1="1162" x2="1072" y2="1162" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="716" y="1254" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle" font-style="italic">Toda consulta filtra por el companyId de la sesión: no hay row-level security debajo.</text>
+<line x1="1163" y1="956" x2="1163" y2="1116" stroke="#57606a" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="1192" y="978" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">escribe</text>
+</svg>

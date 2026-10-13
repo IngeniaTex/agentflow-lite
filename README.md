@@ -63,23 +63,13 @@ Esta versión incluye **autenticación básica** para proteger el dashboard, con
 
 ### General
 
-```txt
-Cliente final
-  ↓
-Web Chat público (/chat)
-  ↓
-API Backend (/api/ai/chat)
-  ↓
-Orquestador IA (src/lib/ai-orchestrator.ts)
-  ↓
-Catálogo de agentes (src/lib/agent-definitions.ts)
-  ↓
-Herramientas internas (src/lib/agent-tools.ts)
-  ↓
-Base de datos PostgreSQL (Prisma)
-  ↓
-Dashboard empresarial protegido por login
-```
+![Arquitectura de Aiwork: entrada, orquestador, proveedor IA, reglas y herramientas, dashboard](docs/arquitectura.svg)
+
+Cada franja es una capa del recorrido de un mensaje: la **entrada** valida la petición y resuelve
+la empresa; el **orquestador** arma el contexto y elige el agente; el **proveedor IA** genera la
+decisión (o el modo mock la construye); las **reglas** deciden qué herramientas se ejecutan y el
+**dashboard** lee esos registros filtrando siempre por `companyId`. El detalle de cada regla está en
+[Reglas de respuesta del chat](#reglas-de-respuesta-del-chat).
 
 ### Autenticación
 
@@ -134,10 +124,12 @@ Las rutas de API protegidas usan `requireApiSession()` y **todas las consultas f
 **Intención y agente**
 
 - La intención se detecta **por palabras clave, sin LLM**. Si una cita y una cotización empatan,
-  gana la cita.
-- **Intención pendiente:** si el mensaje no trae intención clara y la última respuesta del agente
-  pedía nombre, teléfono o correo, se retoma la última cita o cotización que pidió el cliente. Así,
-  un cliente que solo manda su teléfono no pierde el hilo.
+  gana la cita. Las palabras de la recepcionista ("horario", "ubicación"…) dan `FAQ`; `GENERAL`
+  significa que el mensaje no coincidió con nada.
+- **Intención pendiente:** una cita o cotización que todavía no se crea queda marcada en la
+  respuesta del agente y se arrastra entre turnos hasta crearse. Si el siguiente mensaje no trae otra
+  intención (o solo trae datos de contacto), vuelve al agente de citas o cotizaciones. Una pregunta
+  intermedia ("¿qué horario tienen?") la responde la recepcionista sin perder el hilo.
 - Si la empresa definió un `customPrompt` para el agente, reemplaza al prompt por defecto.
 
 **Validación de la respuesta del modelo**
@@ -169,6 +161,11 @@ Las rutas de API protegidas usan `requireApiSession()` y **todas las consultas f
     (*"soy de Monterrey"* no cuenta como nombre). En modo mock, un nombre escrito a secas no se
     reconoce y el agente lo vuelve a pedir; con un LLM sí, si el modelo lo extrae.
 - Si se registra al cliente sin cita ni cotización, queda en estado **Contactado**.
+- **Prospecto completo sin cita ni cotización:** la primera vez que el cliente completa nombre,
+  teléfono y correo sin que se cree una cita o cotización (p. ej. "me interesa una página web"), se
+  crea una **tarea de prioridad alta** "Contactar a … — interesado en …" para que el equipo lo atienda.
+- En el chat público el cliente solo ve las acciones que le importan (cita o cotización
+  registrada); el resumen, el alta del prospecto y las tareas internas se ven en el dashboard.
 - Una fecha de cita que no sea ISO válida se interpreta del texto ("mañana", "el viernes a las 5");
   sin hora explícita se usa las 10:00.
 
