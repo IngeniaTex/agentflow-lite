@@ -209,10 +209,13 @@ Notas del SDK: Claude Opus 5 **rechaza `temperature` con un 400** — `anthropic
    `Conversation.agentId` se crea siempre en `null` y el dashboard muestra "Sin agente" en toda
    conversación nueva. El `agentId` sí queda en clientes, citas, cotizaciones y tareas.
 2. `detectIntent(message)` — **por palabras clave, sin LLM** (`mock-ai.ts`). Una intención de cita
-   gana sobre una de precio cuando ambas puntúan igual.
-3. **Intención pendiente**: si el turno actual sale `GENERAL` y la última respuesta del agente pedía
-   datos (`/nombre|teléfono|correo electrónico/`), se recupera la última intención `APPOINTMENT` o
-   `QUOTE` del historial. Sin esto, el cliente que solo manda su teléfono perdería el hilo de la cita.
+   gana sobre una de precio cuando ambas puntúan igual. Las keywords de la recepcionista devuelven
+   `FAQ`; `GENERAL` queda reservado para "ninguna coincidencia" (la lógica pendiente depende de eso).
+3. **Intención pendiente**: vive en `Message.metadata.pendingIntent` de la respuesta del agente, no
+   en el texto. Se escribe mientras haya una intención `APPOINTMENT`/`QUOTE` sin registro creado y se
+   arrastra turno a turno hasta que se crea la cita o cotización. Se retoma si el turno sale `GENERAL`
+   o `FAQ` *solo* por traer datos de contacto (`extractContactData`). Sin esto, el cliente que solo
+   manda su teléfono perdería el hilo.
 4. Se elige el `AgentDefinition` de la intención, restringido a los agentes activos de la empresa, y
    `companyAgent.customPrompt` sobrescribe el `defaultPrompt` si existe.
 5. Se persiste el mensaje del cliente y se genera la decisión (proveedor activo o mock).
@@ -233,6 +236,12 @@ Trampas de esa puerta:
   del cliente**; un dato inventado por el modelo se ignora. La API ya no acepta `visitor`.
 - Cuando no hay cita ni cotización, el cliente se guarda con estado `CONTACTED`, no con el estado
   derivado de la intención: un prospecto a medio capturar ya no aparece como `APPOINTMENT_REQUESTED`.
+- **Tarea de contacto**: la primera vez que nombre + teléfono + correo quedan completos (comparado
+  con `existingCustomer` al inicio del turno) y en ese turno no se creó ninguna tarea, se crea una
+  tarea `HIGH` "Contactar a …". Si después se crea la cotización habrá dos tareas: es deliberado,
+  preferimos duplicar a perder el prospecto.
+- `chat-widget.tsx` filtra `actions` con `CUSTOMER_ACTION_LABELS`: el cliente final solo ve cita y
+  cotización. La API sigue devolviendo todas.
 - `matchService()` puntúa título (doble) y contenido, y **exige un puntaje mínimo de 2**;
   `knowledgeSnippet()` ya no cae a la primera FAQ. Base de conocimiento pobre = respuesta genérica,
   no una FAQ equivocada.

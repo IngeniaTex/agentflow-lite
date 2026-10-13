@@ -106,21 +106,29 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
       })
     : null;
 
-  // 2. Intención y agente. Si el mensaje solo aporta datos de contacto,
-  // recupera la intención pendiente del último mensaje del cliente.
+  // 2. Intención y agente. Una cita o cotización a la que le faltan datos de
+  // contacto queda marcada en los metadatos de la respuesta del agente
+  // (`pendingIntent`). Antes se adivinaba buscando "teléfono" en el texto, y
+  // cualquier respuesta que diera el teléfono del negocio activaba el modo.
   const detectedIntent = detectIntent(message);
-  const lastAgentReply = [...history].reverse().find((turn) => turn.sender === "AGENT")?.content;
-  const isWaitingForContact = Boolean(
-    lastAgentReply && /nombre|tel[eé]fono|correo electr[oó]nico/i.test(lastAgentReply),
-  );
-  const pendingIntent = isWaitingForContact
-    ? [...history]
-        .reverse()
-        .filter((turn) => turn.sender === "CUSTOMER")
-        .map((turn) => detectIntent(turn.content))
-        .find((value) => value === "APPOINTMENT" || value === "QUOTE")
-    : undefined;
-  const intent = detectedIntent === "GENERAL" && pendingIntent ? pendingIntent : detectedIntent;
+  const lastAgentMessage = await prisma.message.findFirst({
+    where: { conversationId: conversation.id, sender: "AGENT" },
+    orderBy: { createdAt: "desc" },
+    select: { metadata: true },
+  });
+  const pendingIntent = readPendingIntent(lastAgentMessage?.metadata);
+  // Retoma la intención pendiente si el mensaje no trae otra: o no coincide con
+  // nada (GENERAL), o coincide con la recepcionista solo porque trae datos de
+  // contacto ("mi teléfono es…"). Una pregunta real ("¿qué horario tienen?")
+  // sí cambia de agente.
+  const contactInMessage = extractContactData(message);
+  const onlyBringsContact =
+    detectedIntent === "FAQ" &&
+    Boolean(contactInMessage.name || contactInMessage.phone || contactInMessage.email);
+  const intent =
+    pendingIntent && (detectedIntent === "GENERAL" || onlyBringsContact)
+      ? pendingIntent
+      : detectedIntent;
   const definition = pickAgentDefinition(intent, companyAgents.map((ca) => ca.agent.slug));
   const companyAgent = companyAgents.find((ca) => ca.agent.slug === definition.slug);
   const agentRecord =
@@ -349,6 +357,56 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
     }
   }
 
+  // Prospecto completo sin cita ni cotización: el cliente dejó nombre, teléfono
+  // y correo esperando que lo contacten, pero ningún agente creó un registro
+  // accionable (p. ej. "me interesa una página web" no trae palabras de
+  // cotización y lo atiende la recepcionista). Sin esta tarea el prospecto se
+  // perdía entre los clientes "Contactado". Solo se crea la primera vez que
+  // los datos quedan completos, no en cada turno.
+  const contactComplete = Boolean(
+    detectedCustomer.name && detectedCustomer.phone && detectedCustomer.email,
+  );
+  const contactWasComplete = Boolean(
+    existingCustomer &&
+      existingCustomer.name &&
+      !existingCustomer.name.startsWith("Prospecto") &&
+      existingCustomer.phone &&
+      existingCustomer.email,
+  );
+  if (
+    contactComplete &&
+    !contactWasComplete &&
+    customerId &&
+    !actions.some((action) => action.tool === "create_task") &&
+    agentAllows(definition.slug, "create_task")
+  ) {
+    const interest = detectedCustomer.serviceInterest ?? existingCustomer?.serviceInterest;
+    const task = await toolCreateTask({
+      companyId,
+      customerId,
+      agentId: agentRecord?.id,
+      title: `Contactar a ${detectedCustomer.name}${interest ? ` — interesado en ${interest}` : ""}`,
+      description:
+        `Prospecto capturado por ${definition.name} desde el chat. Dejó nombre, teléfono y ` +
+        "correo y espera que el equipo lo contacte.",
+      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      priority: "HIGH",
+    });
+    metrics.push("TASK_CREATED");
+    actions.push({ tool: "create_task", label: "Tarea de contacto creada", recordId: task.id });
+  }
+
+  // Cita o cotización en curso que aún no se crea. Se arrastra entre turnos
+  // hasta que se crea el registro, para que una pregunta intermedia ("¿qué
+  // horario tienen?") o un turno en que el modelo pide más detalles no hagan
+  // perder el hilo y el siguiente mensaje vuelva al agente correcto.
+  const requestCreated = actions.some(
+    (action) => action.tool === "create_appointment_request" || action.tool === "generate_quote",
+  );
+  const awaitingIntent =
+    intent === "APPOINTMENT" || intent === "QUOTE" ? intent : pendingIntent;
+  const nextPendingIntent = requestCreated ? undefined : awaitingIntent;
+
   // 6. Respuesta del agente + resumen
   await prisma.message.create({
     data: {
@@ -359,6 +417,7 @@ export async function runOrchestrator(input: OrchestratorInput): Promise<ChatTur
         agentSlug: definition.slug,
         intent: decision.intent,
         source: decision.source,
+        ...(nextPendingIntent ? { pendingIntent: nextPendingIntent } : {}),
       },
     },
   });
@@ -436,6 +495,13 @@ async function resolveConversation(params: {
 
   await recordMetric(params.companyId, "CONVERSATION_STARTED", { channel: params.channel });
   return conversation;
+}
+
+/** Lee `pendingIntent` de los metadatos (JSON libre) del último mensaje del agente. */
+function readPendingIntent(metadata: unknown): "APPOINTMENT" | "QUOTE" | undefined {
+  if (!metadata || typeof metadata !== "object") return undefined;
+  const value = (metadata as { pendingIntent?: unknown }).pendingIntent;
+  return value === "APPOINTMENT" || value === "QUOTE" ? value : undefined;
 }
 
 const normalizeText = (text: string) =>

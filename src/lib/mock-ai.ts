@@ -56,7 +56,11 @@ export function detectIntent(message: string): Intent {
 
   const best = ranked[0];
   if (!best || best.score === 0) return "GENERAL";
-  return best.agent.intents[0];
+  // GENERAL queda reservado para "sin coincidencias". La recepcionista atiende
+  // GENERAL y FAQ; si devolviera intents[0] (GENERAL), una pregunta como
+  // "¿qué horario tienen?" no se distinguiría de un dato suelto y el
+  // orquestador la mandaría a la cita o cotización pendiente.
+  return best.agent.intents.includes("FAQ") ? "FAQ" : best.agent.intents[0];
 }
 
 export function extractContactData(message: string) {
@@ -116,7 +120,14 @@ function missingContactPrompt(contact: ReturnType<typeof contactFromConversation
 /** Busca el servicio mencionado dentro de la base de conocimiento. */
 export function matchService(message: string, knowledge: KnowledgeItem[]) {
   const text = normalize(message);
-  const ignored = new Set(["para", "como", "desde", "hasta", "sobre", "entre", "servicio"]);
+  // Palabras comunes que no identifican un servicio: sin esta lista, "Quiero
+  // una cotización" coincidía con cualquier entrada que dijera "una".
+  const ignored = new Set([
+    "para", "como", "desde", "hasta", "sobre", "entre", "servicio", "una", "uno", "unos",
+    "unas", "que", "con", "los", "las", "del", "por", "mas", "sus", "nos", "tus", "mis",
+    "quiero", "quisiera", "tiene", "tienen", "cual", "cuales", "son", "hay", "esta", "este",
+    "estos", "todo", "todos", "muy", "pero", "cuando", "donde",
+  ]);
 
   const ranked = knowledge
     .map((item) => {
@@ -209,7 +220,7 @@ export function buildMockDecision(
       return {
         intent,
         source: "mock",
-        reply: `${greeting(context)} Con gusto te ayudo a solicitar una cita para ${serviceName.toLowerCase()} en ${company}. ${contactPrompt}`,
+        reply: `${greeting(context)} Con gusto te ayudo a solicitar una cita${service ? ` para ${serviceName.toLowerCase()}` : ""} en ${company}. ${contactPrompt}`,
         summary: `Solicitud de cita para ${serviceName}; datos de contacto pendientes.`,
         customer: baseCustomer,
       };
@@ -240,11 +251,18 @@ export function buildMockDecision(
 
   if (intent === "QUOTE") {
     const contactPrompt = missingContactPrompt(contact);
+    const pricing = context.knowledge.find((item) => item.type === "PRICING");
     if (contactPrompt) {
       return {
         intent,
         source: "mock",
-        reply: `${greeting(context)} Con gusto preparo una cotización preliminar de ${serviceName.toLowerCase()} en ${company}. ${contactPrompt}`,
+        // Sin servicio concreto ("¿cuáles son sus precios?") se responde primero
+        // con la tabla de precios de la base (entrada PRICING) y luego se piden datos.
+        reply: service
+          ? `${greeting(context)} Con gusto preparo una cotización preliminar de ${serviceName.toLowerCase()} en ${company}. ${contactPrompt}`
+          : pricing
+            ? `${greeting(context)} ${pricing.content} ${contactPrompt}`
+            : `${greeting(context)} Con gusto preparo una cotización preliminar en ${company}. ${contactPrompt}`,
         summary: `Cotización de ${serviceName}; datos de contacto pendientes.`,
         customer: baseCustomer,
       };
@@ -280,6 +298,35 @@ export function buildMockDecision(
       summary: `Seguimiento solicitado sobre ${serviceName}.`,
       customer: baseCustomer,
       followUpMessage,
+    };
+  }
+
+  // Cortesía ("gracias", "ok", "perfecto"): no se repite la última ficha.
+  if (/^\s*(gracias|muchas gracias|ok|okay|perfecto|listo|excelente|de acuerdo)[\s!.¡]*$/i.test(message)) {
+    return {
+      intent: "GENERAL",
+      source: "mock",
+      reply: "¡Con gusto! ¿Hay algo más en lo que te pueda ayudar?",
+      customer: baseCustomer,
+    };
+  }
+
+  // Mensaje que solo trae datos de contacto ("me llamo Jon", "1234567890"): se
+  // agradece y se pide lo que falta, en vez de repetir la ficha del servicio
+  // que se encontró en turnos anteriores.
+  const sharedNow = extractContactData(message);
+  const asksSomething = Boolean(matchService(message, context.knowledge));
+  if (!asksSomething && (sharedNow.name || sharedNow.phone || sharedNow.email)) {
+    const contactPrompt = missingContactPrompt(contact);
+    const thanks = contact.name ? `¡Gracias, ${contact.name}!` : "¡Gracias!";
+    return {
+      intent: "GENERAL",
+      source: "mock",
+      reply: contactPrompt
+        ? `${thanks} ${contactPrompt}`
+        : `${thanks} Ya tengo tus datos. Un asesor de ${company} te contactará muy pronto${service ? ` para hablar de ${service.title.toLowerCase()}` : ""}.`,
+      summary: `Prospecto compartió datos de contacto${service ? ` (interés: ${service.title})` : ""}.`,
+      customer: baseCustomer,
     };
   }
 

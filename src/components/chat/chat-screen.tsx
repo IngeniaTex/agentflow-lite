@@ -18,26 +18,18 @@ export function ChatScreen({ company }: { company: PublicCompany }) {
             <ArrowLeft className="h-4 w-4" /> Volver
           </Link>
         </Button>
-        <Button asChild size="sm" variant="outline">
-          <Link href="/login">Entrar al dashboard</Link>
-        </Button>
+        {/* Sin botón al dashboard: esta pantalla la ven los clientes finales. */}
       </div>
 
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{company.name}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Escribe como lo haría un cliente. Cada mensaje pasa por el orquestador, que elige al
-          agente adecuado y crea registros reales (prospectos, citas, cotizaciones y tareas) en el
-          dashboard de {company.name}.
+          Pregúntanos por nuestros servicios, precios u horarios, agenda una cita o pide una
+          cotización. Te respondemos al momento.
         </p>
       </div>
 
       <ChatWidget companyName={company.name} companySlug={company.slug} />
-
-      <p className="text-xs text-muted-foreground">
-        La etiqueta del encabezado indica qué motor responde: Claude, OpenAI o el modo mock basado
-        en reglas cuando no hay ninguna llave configurada.
-      </p>
     </main>
   );
 }
